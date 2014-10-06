@@ -1,8 +1,7 @@
 #Common setup
 .SECONDEXPANSION:
-SOURCE_DIR = ../../src/desktop
+SOURCE_DIR = ../../../src/desktop
 OBJ_DIR = objs
-BIN_DIR = bin
 EXECUTABLE = NoteVault
 
 #Source files
@@ -36,11 +35,10 @@ DSOURCE_PATHS = $(patsubst %,$(SOURCE_DIR)/%,$(DSOURCES))
 DOBJECTS = $(patsubst %,$(OBJ_DIR)/%,$(subst /,_,$(DSOURCES:.d=.d.o)))
 CPPSOURCE_PATHS = $(patsubst %,$(SOURCE_DIR)/%,$(CPPSOURCES))
 CPPOBJECTS = $(patsubst %,$(OBJ_DIR)/%,$(subst /,_,$(CPPSOURCES:.cpp=.cpp.o)))
-EXECUTABLE_PATH = $(BIN_DIR)/$(EXECUTABLE)
 
-all: $(DSOURCE_PATHS) $(CPPSOURCE_PATHS) $(EXECUTABLE_PATH) 
+all: $(DSOURCE_PATHS) $(CPPSOURCE_PATHS) $(EXECUTABLE) 
 
-$(EXECUTABLE_PATH): $(OBJ_DIR) $(BIN_DIR) $(DOBJECTS) $(CPPOBJECTS)
+$(EXECUTABLE): $(OBJ_DIR) $(DOBJECTS) $(CPPOBJECTS)
 	$(DCOMP) $(DLDFLAGS) $(DOBJECTS) $(CPPOBJECTS) -o $@
 
 $(OBJ_DIR)/%.d.o: $(SOURCE_DIR)/$$(subst _,/,%.d)
@@ -49,8 +47,8 @@ $(OBJ_DIR)/%.d.o: $(SOURCE_DIR)/$$(subst _,/,%.d)
 $(OBJ_DIR)/%.cpp.o: $(SOURCE_DIR)/$$(subst _,/,%.cpp)
 	$(CPPCOMP) $(CPPFLAGS) $< -o $@
 
-$(OBJ_DIR) $(BIN_DIR):
+$(OBJ_DIR):
 	mkdir -p $@
 
 clean:
-	rm -r $(OBJ_DIR) $(BIN_DIR)
+	rm -rf $(OBJ_DIR) $(EXECUTABLE)
