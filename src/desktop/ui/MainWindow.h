@@ -14,9 +14,25 @@
  * limitations under the License.
  */
 
-import ui.MainWindow;
+#include <wx/frame.h>
 
-int main(string[] args)
+namespace NoteVault
 {
-	return RunApp();
-}
+
+class MainWindow : public wxFrame
+{
+public:
+	MainWindow(const wxString& title, const wxSize& size);
+
+private:
+
+};
+
+} // namespace NoteVault
+
+extern "C"
+{
+
+int NoteVault_RunApp();
+
+} // extern "C"

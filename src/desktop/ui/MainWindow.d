@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import ui.MainWindow;
+extern (C) int NoteVault_RunApp();
 
-int main(string[] args)
+int RunApp()
 {
-	return RunApp();
+	return NoteVault_RunApp();
 }
