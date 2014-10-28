@@ -34,9 +34,10 @@ DLDFLAGS += $(WXLIBS)
 DSOURCE_PATHS = $(patsubst %,$(SOURCE_DIR)/%,$(DSOURCES))
 DOBJECTS = $(patsubst %,$(OBJ_DIR)/%,$(subst /,_,$(DSOURCES:.d=.d.o)))
 CPPSOURCE_PATHS = $(patsubst %,$(SOURCE_DIR)/%,$(CPPSOURCES))
+CPPHEADER_PATHS = $(patsubst %,$(SOURCE_DIR)/%,$(CPPSOURCES:.cpp=.h))
 CPPOBJECTS = $(patsubst %,$(OBJ_DIR)/%,$(subst /,_,$(CPPSOURCES:.cpp=.cpp.o)))
 
-all: $(DSOURCE_PATHS) $(CPPSOURCE_PATHS) $(EXECUTABLE) 
+all: $(DSOURCE_PATHS) $(CPPSOURCE_PATHS) $(CPPHEADER_PATHS) $(EXECUTABLE) 
 
 $(EXECUTABLE): $(OBJ_DIR) $(DOBJECTS) $(CPPOBJECTS)
 	$(DCOMP) $(DLDFLAGS) $(DOBJECTS) $(CPPOBJECTS) -o $@
@@ -44,7 +45,7 @@ $(EXECUTABLE): $(OBJ_DIR) $(DOBJECTS) $(CPPOBJECTS)
 $(OBJ_DIR)/%.d.o: $(SOURCE_DIR)/$$(subst _,/,%.d)
 	$(DCOMP) $(DFLAGS) $< -o $@
 
-$(OBJ_DIR)/%.cpp.o: $(SOURCE_DIR)/$$(subst _,/,%.cpp)
+$(OBJ_DIR)/%.cpp.o: $(SOURCE_DIR)/$$(subst _,/,%.cpp) $(CPPHEADER_PATHS)
 	$(CPPCOMP) $(CPPFLAGS) $< -o $@
 
 $(OBJ_DIR):

@@ -25,7 +25,12 @@ public:
 	MainWindow(const wxString& title, const wxSize& size);
 
 private:
+	void OnNew(wxCommandEvent& event);
+	void OnOpen(wxCommandEvent& event);
+	void OnExit(wxCommandEvent& event);
+	void OnAbout(wxCommandEvent& event);
 
+	wxDECLARE_EVENT_TABLE();
 };
 
 } // namespace NoteVault
