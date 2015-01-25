@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-#include "ui/MainWindow.h"
-#include <wx/app.h>
+#include "MainWindow.h"
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
 
@@ -89,39 +88,4 @@ void MainWindow::OnAbout(wxCommandEvent&)
 		wxOK, this);
 }
 
-class App : public wxApp
-{
-public:
-	App()
-		: m_Window(nullptr) {}
-
-	virtual ~App()
-	{
-	}
-
-	virtual bool OnInit()
-	{
-		m_Window = new MainWindow("Note Vault", wxSize(800, 600));
-		m_Window->Show(true);
-		return true;
-	}
-
-private:
-	MainWindow* m_Window;
-};
-
 } // namespace NoteVault
-
-wxIMPLEMENT_APP_NO_MAIN(NoteVault::App);
-
-extern "C"
-{
-
-int NoteVault_RunApp()
-{
-	int argc = 0;
-	wxChar** argv = nullptr;
-	return wxEntry(argc, argv);
-}
-
-} // extern "C"

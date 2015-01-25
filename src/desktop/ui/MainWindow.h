@@ -34,10 +34,3 @@ private:
 };
 
 } // namespace NoteVault
-
-extern "C"
-{
-
-int NoteVault_RunApp();
-
-} // extern "C"
