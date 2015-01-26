@@ -14,33 +14,26 @@
  * limitations under the License.
  */
 
-#include "ui/MainWindow.h"
-#include <wx/app.h>
+#include <unordered_set>
+#include <cstdint>
 
-namespace
+namespace NoteVault
 {
 
-class App : public wxApp
+class IdFactory
 {
 public:
-	App()
-		: m_Window(nullptr) {}
+	IdFactory();
 
-	virtual ~App()
-	{
-	}
+	bool AddId(uint64_t id);
+	uint64_t NewId();
+	bool RemoveId(uint64_t id);
 
-	bool OnInit() override
-	{
-		m_Window = new NoteVault::MainWindow("Note Vault", wxSize(800, 600));
-		m_Window->Show(true);
-		return true;
-	}
+	void Clear();
 
 private:
-	NoteVault::MainWindow* m_Window;
+	std::unordered_set<uint64_t> m_Ids;
+	uint64_t m_MaxId;
 };
 
-} // namespace
-
-wxIMPLEMENT_APP(App);
+} // namespace NoteVault

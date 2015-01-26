@@ -14,33 +14,30 @@
  * limitations under the License.
  */
 
-#include "ui/MainWindow.h"
-#include <wx/app.h>
+#include <string>
+#include <cstdint>
 
-namespace
+namespace NoteVault
 {
 
-class App : public wxApp
+class Note
 {
 public:
-	App()
-		: m_Window(nullptr) {}
+	explicit Note(uint64_t id)
+		: m_Id(id) {}
 
-	virtual ~App()
-	{
-	}
+	uint64_t GetId() const	{return m_Id;}
 
-	bool OnInit() override
-	{
-		m_Window = new NoteVault::MainWindow("Note Vault", wxSize(800, 600));
-		m_Window->Show(true);
-		return true;
-	}
+	const std::string& GetTitle() const	{return m_Title;}
+	void SetTitle(const std::string& title)	{m_Title = title;}
+
+	const std::string& GetMessage() const	{return m_Message;}
+	void SetMessage(const std::string& message)	{m_Message = message;}
 
 private:
-	NoteVault::MainWindow* m_Window;
+	uint64_t m_Id;
+	std::string m_Title;
+	std::string m_Message;
 };
 
-} // namespace
-
-wxIMPLEMENT_APP(App);
+} // namespace NoteVault

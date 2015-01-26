@@ -14,33 +14,39 @@
  * limitations under the License.
  */
 
-#include "ui/MainWindow.h"
-#include <wx/app.h>
+#include "IdFactory.h"
 
-namespace
+namespace NoteVault
 {
 
-class App : public wxApp
+IdFactory::IdFactory()
+	: m_MaxId(0)
 {
-public:
-	App()
-		: m_Window(nullptr) {}
+}
 
-	virtual ~App()
-	{
-	}
+bool IdFactory::AddId(uint64_t id)
+{
+	if (!m_Ids.insert(id).second)
+		return false;
+	m_MaxId = std::max(m_MaxId, id + 1);
+	return true;
+}
 
-	bool OnInit() override
-	{
-		m_Window = new NoteVault::MainWindow("Note Vault", wxSize(800, 600));
-		m_Window->Show(true);
-		return true;
-	}
+uint64_t IdFactory::NewId()
+{
+	uint64_t newId = m_MaxId++;
+	m_Ids.insert(newId);
+	return newId;
+}
 
-private:
-	NoteVault::MainWindow* m_Window;
-};
+bool IdFactory::RemoveId(uint64_t id)
+{
+	return m_Ids.erase(id) > 0;
+}
 
-} // namespace
+void IdFactory::Clear()
+{
+	m_Ids.clear();
+}
 
-wxIMPLEMENT_APP(App);
+} // namespace NoteVault
