@@ -7,13 +7,21 @@ endif()
 
 set(SRC_LIST
 	main.cpp
-	ui/MainWindow.cpp
-	ui/MainWindow.h
+	io/FileIStream.cpp
+	io/FileIStream.h
+	io/FileOStream.cpp
+	io/FileOStream.h
+	io/IStream.h
+	io/OStream.h
 	notes/IdFactory.h
 	notes/IdFactory.cpp
 	notes/Note.h
 	notes/NoteSet.cpp
 	notes/NoteSet.h
+	notes/NoteFile.cpp
+	notes/NoteFile.h
+	ui/MainWindow.cpp
+	ui/MainWindow.h
 	)
 
 set(wxWidgets_CONFIGURATION mswu)
