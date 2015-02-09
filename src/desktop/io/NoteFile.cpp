@@ -143,7 +143,9 @@ NoteFile::Result NoteFile::LoadNotes(NoteSet& notes, IStream& stream, const std:
 	if (stream.Read(salt.data(), saltLen) != saltLen)
 		return Result::IoError;
 
-	key = Crypto::GenerateKey(password, salt, Crypto::cDefaultKeyIterations);
+	unsigned int numIterations = Crypto::cDefaultKeyIterations;
+	//If an older file version, set the number of iterations based on that version.
+	key = Crypto::GenerateKey(password, salt, numIterations);
 	if (key.empty())
 		return Result::EncryptionError;
 
@@ -189,6 +191,13 @@ NoteFile::Result NoteFile::LoadNotes(NoteSet& notes, IStream& stream, const std:
 			return Result::IoError;
 	}
 
+	//If reading from an old file, re-calculate the key with the updated number of iterations.
+	if (numIterations != Crypto::cDefaultKeyIterations)
+	{
+		key = Crypto::GenerateKey(password, salt, Crypto::cDefaultKeyIterations);
+		if (key.empty())
+			return Result::EncryptionError;
+	}
 	return Result::Success;
 }
 
