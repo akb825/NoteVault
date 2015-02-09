@@ -144,6 +144,8 @@ NoteFile::Result NoteFile::LoadNotes(NoteSet& notes, IStream& stream, const std:
 		return Result::IoError;
 
 	key = Crypto::GenerateKey(password, salt, Crypto::cDefaultKeyIterations);
+	if (key.empty())
+		return Result::EncryptionError;
 
 	uint32_t ivLen;
 	if (!Read(ivLen, stream))
@@ -218,7 +220,7 @@ NoteFile::Result NoteFile::SaveNotes(const NoteSet& notes, OStream& stream,
 		return Result::EncryptionError;
 
 	//Write the magic string again for verifying the correct key
-	if (stream.Write(cMagicString, sizeof(cMagicString)) != sizeof(cMagicString))
+	if (cryptoStream.Write(cMagicString, sizeof(cMagicString)) != sizeof(cMagicString))
 		return Result::IoError;
 
 	//Write the notes

@@ -34,7 +34,7 @@ bool FileOStream::Open(const std::string& fileName)
 {
 	Close();
 
-	FILE* file = fopen(fileName.c_str(), "rb");
+	FILE* file = fopen(fileName.c_str(), "wb");
 	if (!file)
 		return false;
 	m_File = file;

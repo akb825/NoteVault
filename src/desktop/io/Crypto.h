@@ -28,6 +28,8 @@ public:
 	static const unsigned int cKeyLenBytes = cKeyLen/8;
 	static const unsigned int cBlockLen = 128;
 	static const unsigned int cBlockLenBytes = cBlockLen/8;
+	static const unsigned int cSaltLen = 128;
+	static const unsigned int cSaltLenBytes = cSaltLen/8;
 	static const unsigned int cDefaultKeyIterations = 20000;
 
 	static void Initialize();

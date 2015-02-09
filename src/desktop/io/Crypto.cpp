@@ -36,8 +36,11 @@ std::vector<uint8_t> Crypto::GenerateKey(const std::string& password,
 {
 	std::vector<uint8_t> key;
 	key.resize(cKeyLenBytes);
-	PKCS5_PBKDF2_HMAC_SHA1(password.c_str(), static_cast<int>(password.size()), salt.data(),
-		static_cast<int>(salt.size()), numIterations, cKeyLenBytes, key.data());
+	if (!PKCS5_PBKDF2_HMAC_SHA1(password.c_str(), static_cast<int>(password.size()), salt.data(),
+		static_cast<int>(salt.size()), numIterations, cKeyLenBytes, key.data()))
+	{
+		key.clear();
+	}
 	return key;
 }
 
