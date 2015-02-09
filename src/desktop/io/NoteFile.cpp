@@ -133,8 +133,10 @@ NoteFile::Result NoteFile::LoadNotes(NoteSet& notes, IStream& stream, const std:
 	}
 
 	uint32_t version;
-	if (!Read(version, stream) || version > cFileVersion)
-		return Result::InvalidFile;
+	if (!Read(version, stream))
+		return Result::IoError;
+	if (version > cFileVersion)
+		return Result::InvalidVersion;
 
 	uint32_t saltLen;
 	if (!Read(saltLen, stream))

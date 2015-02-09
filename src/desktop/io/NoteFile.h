@@ -34,6 +34,7 @@ public:
 	{
 		Success,
 		InvalidFile,
+		InvalidVersion,
 		IoError,
 		EncryptionError
 	};
