@@ -20,17 +20,17 @@
 #include "../io/OStream.h"
 
 #if defined(__BIG_ENDIAN__)
-#	define DO_SWAP 1
+#	define DO_SWAP 0
 #elif defined(__LITTLE_ENDIAN__)
-#	define DO_SWAP 0
+#	define DO_SWAP 1
 #elif defined(_WIN32) || defined(_WIN64)
-#	define DO_SWAP 0
+#	define DO_SWAP 1
 #else
 #	include <endian.h>
 #	if __BYTE_ORDER == __BIG_ENDIAN
-#		define DO_SWAP 1
-#	else
 #		define DO_SWAP 0
+#	else
+#		define DO_SWAP 1
 #	endif
 #endif
 

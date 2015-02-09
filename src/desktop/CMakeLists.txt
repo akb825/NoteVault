@@ -7,6 +7,8 @@ endif()
 
 set(SRC_LIST
 	main.cpp
+	io/Crypto.cpp
+	io/Crypto.h
 	io/FileIStream.cpp
 	io/FileIStream.h
 	io/FileOStream.cpp
@@ -26,7 +28,10 @@ set(SRC_LIST
 
 set(wxWidgets_CONFIGURATION mswu)
 find_package(wxWidgets COMPONENTS core base REQUIRED)
+find_package(OpenSSL REQUIRED)
 include(${wxWidgets_USE_FILE})
 
+include_directories(${wxWidgets_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
+
 add_executable(${PROJECT_NAME} ${SRC_LIST})
-target_link_libraries(${PROJECT_NAME} ${wxWidgets_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${wxWidgets_LIBRARIES} ${OPENSSL_LIBRARIES})
