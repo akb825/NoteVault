@@ -9,19 +9,23 @@ set(SRC_LIST
 	main.cpp
 	io/Crypto.cpp
 	io/Crypto.h
+	io/CryptoIStream.cpp
+	io/CryptoIStream.h
+	io/CryptoOStream.cpp
+	io/CryptoOStream.h
 	io/FileIStream.cpp
 	io/FileIStream.h
 	io/FileOStream.cpp
 	io/FileOStream.h
 	io/IStream.h
+	io/NoteFile.cpp
+	io/NoteFile.h
 	io/OStream.h
 	notes/IdFactory.h
 	notes/IdFactory.cpp
 	notes/Note.h
 	notes/NoteSet.cpp
 	notes/NoteSet.h
-	notes/NoteFile.cpp
-	notes/NoteFile.h
 	ui/MainWindow.cpp
 	ui/MainWindow.h
 	)

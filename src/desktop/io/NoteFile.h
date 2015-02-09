@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+#include <string>
+#include <vector>
+#include <cstdint>
+
 namespace NoteVault
 {
 
@@ -24,8 +28,20 @@ class NoteSet;
 class NoteFile
 {
 public:
-	static bool LoadNotes(NoteSet& notes, IStream& stream);
-	static bool SaveNotes(const NoteSet& notes, OStream& stream);
+	static const uint32_t cFileVersion = 0;
+
+	enum class Result
+	{
+		Success,
+		InvalidFile,
+		IoError,
+		EncryptionError
+	};
+
+	static Result LoadNotes(NoteSet& notes, IStream& stream, const std::string& password,
+		std::vector<uint8_t>& salt, std::vector<uint8_t>& key);
+	static Result SaveNotes(const NoteSet& notes, OStream& stream,
+		const std::vector<uint8_t>& salt, const std::vector<uint8_t>& key);
 };
 
 } // namespace NoteVault
