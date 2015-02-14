@@ -16,6 +16,9 @@
 
 #include <wx/frame.h>
 
+class wxListBox;
+class wxTextCtrl;
+
 namespace NoteVault
 {
 
@@ -29,6 +32,9 @@ private:
 	void OnOpen(wxCommandEvent& event);
 	void OnExit(wxCommandEvent& event);
 	void OnAbout(wxCommandEvent& event);
+
+	wxListBox* m_NoteList;
+	wxTextCtrl* m_NoteText;
 
 	wxDECLARE_EVENT_TABLE();
 };

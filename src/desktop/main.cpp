@@ -15,6 +15,7 @@
  */
 
 #include "ui/MainWindow.h"
+#include "io/Crypto.h"
 #include <wx/app.h>
 
 namespace
@@ -32,6 +33,7 @@ public:
 
 	bool OnInit() override
 	{
+		NoteVault::Crypto::Initialize();
 		m_Window = new NoteVault::MainWindow("Note Vault", wxSize(800, 600));
 		m_Window->Show(true);
 		return true;

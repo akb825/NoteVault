@@ -15,6 +15,13 @@
  */
 
 #include "MainWindow.h"
+#include <wx/splitter.h>
+#include <wx/panel.h>
+#include <wx/stattext.h>
+#include <wx/listbox.h>
+#include <wx/textctrl.h>
+#include <wx/button.h>
+#include <wx/sizer.h>
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
 
@@ -33,6 +40,7 @@ wxEND_EVENT_TABLE()
 MainWindow::MainWindow(const wxString& title, const wxSize& size)
 	: wxFrame(nullptr, wxID_ANY, title, wxDefaultPosition, size)
 {
+	//Menu
 	wxMenuBar* menuBar = new wxMenuBar;
 
 	wxMenu* fileMenu = new wxMenu;
@@ -65,6 +73,43 @@ MainWindow::MainWindow(const wxString& title, const wxSize& size)
 	Bind(wxEVT_COMMAND_MENU_SELECTED, &MainWindow::OnOpen, this, wxID_OPEN);
 	Bind(wxEVT_COMMAND_MENU_SELECTED, &MainWindow::OnExit, this, wxID_EXIT);
 	Bind(wxEVT_COMMAND_MENU_SELECTED, &MainWindow::OnAbout, this, wxID_ABOUT);
+
+	//Window layout
+	wxSplitterWindow* splitWindow = new wxSplitterWindow(this);
+	splitWindow->SetMinimumPaneSize(50);
+
+	wxPanel* listPanel = new wxPanel(splitWindow);
+	wxPanel* notePanel = new wxPanel(splitWindow);
+	splitWindow->SplitVertically(listPanel, notePanel, size.GetWidth()/4);
+
+	//List panel
+	wxSizer* vertSizer = new wxBoxSizer(wxVERTICAL);
+
+	vertSizer->Add(new wxStaticText(listPanel, wxID_ANY, "Notes"),
+		wxSizerFlags().Center().Border(wxTOP, 10));
+	m_NoteList = new wxListBox(listPanel, wxID_ANY);
+	vertSizer->Add(m_NoteList, wxSizerFlags().Expand().Border(wxALL, 10).Proportion(1));
+
+	wxSizer* horizSizer = new wxBoxSizer(wxHORIZONTAL);
+
+	wxButton* addNoteButton = new wxButton(listPanel, wxID_ANY, "Add");
+	horizSizer->Add(addNoteButton, wxSizerFlags().Border(wxBOTTOM | wxLEFT | wxRIGHT, 10));
+
+	wxButton* removeNoteButton = new wxButton(listPanel, wxID_ANY, "Remove");
+	horizSizer->Add(removeNoteButton, wxSizerFlags().Border(wxBOTTOM | wxRIGHT, 10));
+
+	vertSizer->Add(horizSizer, 0, wxALIGN_LEFT, 0);
+
+	listPanel->SetSizerAndFit(vertSizer);
+
+	//Note panel
+	vertSizer = new wxBoxSizer(wxVERTICAL);
+
+	m_NoteText = new wxTextCtrl(notePanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
+		wxDefaultSize, wxTE_MULTILINE | wxTE_PROCESS_TAB | wxTE_WORDWRAP);
+	vertSizer->Add(m_NoteText, wxSizerFlags().Expand().Border(wxALL, 10).Proportion(1));
+
+	notePanel->SetSizerAndFit(vertSizer);
 }
 
 void MainWindow::OnExit(wxCommandEvent&)
@@ -84,8 +129,8 @@ void MainWindow::OnOpen(wxCommandEvent&)
 
 void MainWindow::OnAbout(wxCommandEvent&)
 {
-	wxMessageBox("NoteVault version " VERSION "\nCopyright 2014 Aaron Barany", "About NoteVault",
-		wxOK, this);
+	wxMessageBox(L"NoteVault version " VERSION "\nCopyright \u00A9 2015 Aaron Barany",
+		"About NoteVault", wxOK, this);
 }
 
 } // namespace NoteVault
