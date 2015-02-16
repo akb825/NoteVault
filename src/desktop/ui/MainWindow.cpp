@@ -19,7 +19,7 @@
 #include <wx/splitter.h>
 #include <wx/panel.h>
 #include <wx/stattext.h>
-#include <wx/listbox.h>
+#include <wx/editlbox.h>
 #include <wx/textctrl.h>
 #include <wx/button.h>
 #include <wx/sizer.h>
@@ -31,7 +31,8 @@
 namespace NoteVault
 {
 
-static const int cIdNoteText = 0;
+static const int cIdNoteList = 0;
+static const int cIdNoteText = 1;
 
 wxBEGIN_EVENT_TABLE(MainWindow, wxFrame)
 	EVT_MENU(wxID_NEW, MainWindow::OnNew)
@@ -96,20 +97,9 @@ MainWindow::MainWindow(const wxString& title, const wxSize& size)
 	//List panel
 	wxSizer* vertSizer = new wxBoxSizer(wxVERTICAL);
 
-	vertSizer->Add(new wxStaticText(listPanel, wxID_ANY, "Notes"),
-		wxSizerFlags().Center().Border(wxTOP, 10));
-	m_NoteList = new wxListBox(listPanel, wxID_ANY);
+	m_NoteList = new wxEditableListBox(listPanel, cIdNoteList, "Notes");
+	m_NoteList->SetMinClientSize(wxSize(100, 100));
 	vertSizer->Add(m_NoteList, wxSizerFlags().Expand().Border(wxALL, 10).Proportion(1));
-
-	wxSizer* horizSizer = new wxBoxSizer(wxHORIZONTAL);
-
-	wxButton* addNoteButton = new wxButton(listPanel, wxID_ANY, "Add");
-	horizSizer->Add(addNoteButton, wxSizerFlags().Border(wxBOTTOM | wxLEFT | wxRIGHT, 10));
-
-	wxButton* removeNoteButton = new wxButton(listPanel, wxID_ANY, "Remove");
-	horizSizer->Add(removeNoteButton, wxSizerFlags().Border(wxBOTTOM | wxRIGHT, 10));
-
-	vertSizer->Add(horizSizer, 0, wxALIGN_LEFT, 0);
 
 	listPanel->SetSizerAndFit(vertSizer);
 

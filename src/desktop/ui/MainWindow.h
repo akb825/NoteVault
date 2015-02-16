@@ -16,7 +16,7 @@
 
 #include <wx/frame.h>
 
-class wxListBox;
+class wxEditableListBox;
 class wxRichTextCtrl;
 class wxCommandProcessor;
 class wxTextEntry;
@@ -64,7 +64,7 @@ private:
 	wxMenuItem* m_DeleteItem;
 	wxMenuItem* m_SelectAllItem;
 
-	wxListBox* m_NoteList;
+	wxEditableListBox* m_NoteList;
 	wxRichTextCtrl* m_NoteText;
 
 	wxTextEntry* m_FocusEntry;
