@@ -15,6 +15,7 @@
  */
 
 #include "MainWindow.h"
+#include <wx/richtext/richtextctrl.h>
 #include <wx/splitter.h>
 #include <wx/panel.h>
 #include <wx/stattext.h>
@@ -30,15 +31,30 @@
 namespace NoteVault
 {
 
+static const int cIdNoteText = 0;
+
 wxBEGIN_EVENT_TABLE(MainWindow, wxFrame)
 	EVT_MENU(wxID_NEW, MainWindow::OnNew)
 	EVT_MENU(wxID_OPEN, MainWindow::OnOpen)
 	EVT_MENU(wxID_EXIT, MainWindow::OnExit)
+
+	EVT_MENU(wxID_UNDO, MainWindow::OnUndo)
+	EVT_MENU(wxID_REDO, MainWindow::OnRedo)
+	EVT_MENU(wxID_CUT, MainWindow::OnCut)
+	EVT_MENU(wxID_COPY, MainWindow::OnCopy)
+	EVT_MENU(wxID_PASTE, MainWindow::OnPaste)
+	EVT_MENU(wxID_DELETE, MainWindow::OnDelete)
+	EVT_MENU(wxID_SELECTALL, MainWindow::OnSelectAll)
+
 	EVT_MENU(wxID_ABOUT, MainWindow::OnAbout)
+
+	EVT_IDLE(MainWindow::OnIdle)
+
+	EVT_TEXT(cIdNoteText, MainWindow::OnNoteTextChanged)
 wxEND_EVENT_TABLE()
 
 MainWindow::MainWindow(const wxString& title, const wxSize& size)
-	: wxFrame(nullptr, wxID_ANY, title, wxDefaultPosition, size)
+	: wxFrame(nullptr, wxID_ANY, title, wxDefaultPosition, size), m_FocusEntry(nullptr)
 {
 	//Menu
 	wxMenuBar* menuBar = new wxMenuBar;
@@ -50,15 +66,15 @@ MainWindow::MainWindow(const wxString& title, const wxSize& size)
 	fileMenu->Append(wxID_EXIT, "", "");
 
 	wxMenu* editMenu = new wxMenu;
-	editMenu->Append(wxID_UNDO, "", "");
-	editMenu->Append(wxID_REDO, "", "");
+	m_UndoItem = editMenu->Append(wxID_UNDO, "", "");
+	m_RedoItem = editMenu->Append(wxID_REDO, "", "");
 	editMenu->AppendSeparator();
-	editMenu->Append(wxID_CUT, "", "");
-	editMenu->Append(wxID_COPY, "", "");
-	editMenu->Append(wxID_PASTE, "", "");
-	editMenu->Append(wxID_DELETE, "", "");
+	m_CutItem = editMenu->Append(wxID_CUT, "", "");
+	m_CopyItem = editMenu->Append(wxID_COPY, "", "");
+	m_PasteItem = editMenu->Append(wxID_PASTE, "", "");
+	m_DeleteItem = editMenu->Append(wxID_DELETE, "", "");
 	editMenu->AppendSeparator();
-	editMenu->Append(wxID_SELECTALL, "", "");
+	m_SelectAllItem = editMenu->Append(wxID_SELECTALL, "", "");
 
 	wxMenu* helpMenu = new wxMenu;
 	helpMenu->Append(wxID_ABOUT, "", "");
@@ -68,11 +84,6 @@ MainWindow::MainWindow(const wxString& title, const wxSize& size)
 	menuBar->Append(helpMenu, "&Help");
 
 	SetMenuBar(menuBar);
-
-	Bind(wxEVT_COMMAND_MENU_SELECTED, &MainWindow::OnNew, this, wxID_NEW);
-	Bind(wxEVT_COMMAND_MENU_SELECTED, &MainWindow::OnOpen, this, wxID_OPEN);
-	Bind(wxEVT_COMMAND_MENU_SELECTED, &MainWindow::OnExit, this, wxID_EXIT);
-	Bind(wxEVT_COMMAND_MENU_SELECTED, &MainWindow::OnAbout, this, wxID_ABOUT);
 
 	//Window layout
 	wxSplitterWindow* splitWindow = new wxSplitterWindow(this);
@@ -105,11 +116,12 @@ MainWindow::MainWindow(const wxString& title, const wxSize& size)
 	//Note panel
 	vertSizer = new wxBoxSizer(wxVERTICAL);
 
-	m_NoteText = new wxTextCtrl(notePanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
-		wxDefaultSize, wxTE_MULTILINE | wxTE_PROCESS_TAB | wxTE_WORDWRAP);
+	m_NoteText = new wxRichTextCtrl(notePanel, cIdNoteText);
 	vertSizer->Add(m_NoteText, wxSizerFlags().Expand().Border(wxALL, 10).Proportion(1));
 
 	notePanel->SetSizerAndFit(vertSizer);
+
+	UpdateMenuItems();
 }
 
 void MainWindow::OnExit(wxCommandEvent&)
@@ -127,10 +139,158 @@ void MainWindow::OnOpen(wxCommandEvent&)
 	printf("open\n");
 }
 
+void MainWindow::OnUndo(wxCommandEvent&)
+{
+	wxCommandProcessor* undoStack = GetUndoStack();
+	if (undoStack)
+		undoStack->Undo();
+}
+
+void MainWindow::OnRedo(wxCommandEvent&)
+{
+	wxCommandProcessor* undoStack = GetUndoStack();
+	if (undoStack)
+		undoStack->Redo();
+}
+
+void MainWindow::OnCut(wxCommandEvent&)
+{
+	wxTextEntry* textEntry = GetTextEntry();
+	wxRichTextCtrl* richText = GetRichTextCtrl();
+	if (textEntry)
+		textEntry->Cut();
+	else if (richText)
+		richText->Cut();
+}
+
+void MainWindow::OnCopy(wxCommandEvent&)
+{
+	wxTextEntry* textEntry = GetTextEntry();
+	wxRichTextCtrl* richText = GetRichTextCtrl();
+	if (textEntry)
+		textEntry->Copy();
+	else if (richText)
+		richText->Copy();
+}
+
+void MainWindow::OnPaste(wxCommandEvent&)
+{
+	wxTextEntry* textEntry = GetTextEntry();
+	wxRichTextCtrl* richText = GetRichTextCtrl();
+	if (textEntry)
+		textEntry->Paste();
+	else if (richText)
+		richText->Paste();
+}
+
+void MainWindow::OnDelete(wxCommandEvent&)
+{
+	wxTextEntry* textEntry = GetTextEntry();
+	wxRichTextCtrl* richText = GetRichTextCtrl();
+	if (textEntry)
+	{
+		long from, to;
+		textEntry->GetSelection(&from, &to);
+		textEntry->Remove(from, to);
+	}
+	else if (richText)
+	{
+		long from, to;
+		richText->GetSelection(&from, &to);
+		richText->Remove(from, to);
+	}
+}
+
+void MainWindow::OnSelectAll(wxCommandEvent&)
+{
+	wxTextEntry* textEntry = GetTextEntry();
+	if (textEntry)
+		textEntry->SelectAll();
+}
+
 void MainWindow::OnAbout(wxCommandEvent&)
 {
 	wxMessageBox(L"NoteVault version " VERSION "\nCopyright \u00A9 2015 Aaron Barany",
 		"About NoteVault", wxOK, this);
+}
+
+void MainWindow::OnIdle(wxIdleEvent&)
+{
+	UpdateMenuItems();
+}
+
+void MainWindow::OnNoteTextChanged(wxCommandEvent&)
+{
+}
+
+wxCommandProcessor* MainWindow::GetUndoStack()
+{
+	wxRichTextCtrl* textControl = dynamic_cast<wxRichTextCtrl*>(FindFocus());
+	if (textControl)
+		return textControl->GetCommandProcessor();
+
+	return nullptr;
+}
+
+wxTextEntry* MainWindow::GetTextEntry()
+{
+	return dynamic_cast<wxTextEntry*>(FindFocus());
+}
+
+wxRichTextCtrl* MainWindow::GetRichTextCtrl()
+{
+	return dynamic_cast<wxRichTextCtrl*>(FindFocus());
+}
+
+void MainWindow::UpdateMenuItems()
+{
+	wxCommandProcessor* undoStack = GetUndoStack();
+	wxTextEntry* textEntry = GetTextEntry();
+	wxRichTextCtrl* richText = GetRichTextCtrl();
+
+	if (undoStack)
+	{
+		m_UndoItem->Enable(undoStack->CanUndo());
+		m_RedoItem->Enable(undoStack->CanRedo());
+	}
+	else
+	{
+		m_UndoItem->Enable(false);
+		m_RedoItem->Enable(false);
+	}
+
+	if (textEntry)
+	{
+		m_CutItem->Enable(textEntry->CanCut());
+		m_CopyItem->Enable(textEntry->CanCopy());
+		m_PasteItem->Enable(textEntry->CanPaste());
+
+		long from, to;
+		textEntry->GetSelection(&from, &to);
+		m_DeleteItem->Enable(from != to);
+
+		m_SelectAllItem->Enable(!textEntry->IsEmpty());
+	}
+	else if (richText)
+	{
+		m_CutItem->Enable(richText->CanCut());
+		m_CopyItem->Enable(richText->CanCopy());
+		m_PasteItem->Enable(richText->CanPaste());
+
+		long from, to;
+		richText->GetSelection(&from, &to);
+		m_DeleteItem->Enable(from != to);
+
+		m_SelectAllItem->Enable(!richText->IsEmpty());
+	}
+	else
+	{
+		m_CutItem->Enable(false);
+		m_CopyItem->Enable(false);
+		m_PasteItem->Enable(false);
+		m_DeleteItem->Enable(false);
+		m_SelectAllItem->Enable(false);
+	}
 }
 
 } // namespace NoteVault

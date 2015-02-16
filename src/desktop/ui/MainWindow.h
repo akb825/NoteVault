@@ -17,10 +17,15 @@
 #include <wx/frame.h>
 
 class wxListBox;
-class wxTextCtrl;
+class wxRichTextCtrl;
+class wxCommandProcessor;
+class wxTextEntry;
+class wxMenuItem;
 
 namespace NoteVault
 {
+
+class UndoStack;
 
 class MainWindow : public wxFrame
 {
@@ -31,10 +36,38 @@ private:
 	void OnNew(wxCommandEvent& event);
 	void OnOpen(wxCommandEvent& event);
 	void OnExit(wxCommandEvent& event);
+
+	void OnUndo(wxCommandEvent& event);
+	void OnRedo(wxCommandEvent& event);
+	void OnCut(wxCommandEvent& event);
+	void OnCopy(wxCommandEvent& event);
+	void OnPaste(wxCommandEvent& event);
+	void OnDelete(wxCommandEvent& event);
+	void OnSelectAll(wxCommandEvent& event);
+
 	void OnAbout(wxCommandEvent& event);
 
+	void OnIdle(wxIdleEvent& event);
+
+	void OnNoteTextChanged(wxCommandEvent& event);
+
+	static wxCommandProcessor* GetUndoStack();
+	static wxTextEntry* GetTextEntry();
+	static wxRichTextCtrl* GetRichTextCtrl();
+	void UpdateMenuItems();
+
+	wxMenuItem* m_UndoItem;
+	wxMenuItem* m_RedoItem;
+	wxMenuItem* m_CutItem;
+	wxMenuItem* m_CopyItem;
+	wxMenuItem* m_PasteItem;
+	wxMenuItem* m_DeleteItem;
+	wxMenuItem* m_SelectAllItem;
+
 	wxListBox* m_NoteList;
-	wxTextCtrl* m_NoteText;
+	wxRichTextCtrl* m_NoteText;
+
+	wxTextEntry* m_FocusEntry;
 
 	wxDECLARE_EVENT_TABLE();
 };

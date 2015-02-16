@@ -31,7 +31,7 @@ set(SRC_LIST
 	)
 
 set(wxWidgets_CONFIGURATION mswu)
-find_package(wxWidgets COMPONENTS core base REQUIRED)
+find_package(wxWidgets COMPONENTS core base richtext REQUIRED)
 find_package(OpenSSL REQUIRED)
 include(${wxWidgets_USE_FILE})
 
