@@ -15,12 +15,15 @@
  */
 
 #include <wx/frame.h>
+#include <memory>
 
-class wxEditableListBox;
+class wxListCtrl;
+class wxListEvent;
 class wxRichTextCtrl;
 class wxCommandProcessor;
 class wxTextEntry;
 class wxMenuItem;
+class wxButton;
 
 namespace NoteVault
 {
@@ -33,6 +36,8 @@ public:
 	MainWindow(const wxString& title, const wxSize& size);
 
 private:
+	struct NoteContext;
+
 	void OnNew(wxCommandEvent& event);
 	void OnOpen(wxCommandEvent& event);
 	void OnExit(wxCommandEvent& event);
@@ -50,11 +55,21 @@ private:
 	void OnIdle(wxIdleEvent& event);
 
 	void OnNoteTextChanged(wxCommandEvent& event);
+	void OnAddNote(wxCommandEvent& event);
+	void OnRemoveNote(wxCommandEvent& event);
+
+	void OnTitleEdit(wxListEvent& event);
+	void OnSelectNote(wxListEvent& event);
+	void OnDeselectNote(wxListEvent& event);
 
 	static wxCommandProcessor* GetUndoStack();
 	static wxTextEntry* GetTextEntry();
 	static wxRichTextCtrl* GetRichTextCtrl();
 	void UpdateMenuItems();
+	void UpdateUi();
+	void UpdateForSelection(long item);
+	void UpdateForDeselection();
+	void Sort();
 
 	wxMenuItem* m_UndoItem;
 	wxMenuItem* m_RedoItem;
@@ -64,10 +79,13 @@ private:
 	wxMenuItem* m_DeleteItem;
 	wxMenuItem* m_SelectAllItem;
 
-	wxEditableListBox* m_NoteList;
+	wxListCtrl* m_NoteList;
 	wxRichTextCtrl* m_NoteText;
+	wxButton* m_RemoveButton;
 
-	wxTextEntry* m_FocusEntry;
+	std::unique_ptr<NoteContext> m_Notes;
+	bool m_IgnoreSelectionChanges;
+	bool m_SortNextUpdate;
 
 	wxDECLARE_EVENT_TABLE();
 };

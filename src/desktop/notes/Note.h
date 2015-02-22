@@ -26,6 +26,8 @@ public:
 	explicit Note(uint64_t id)
 		: m_Id(id) {}
 
+	Note& operator=(const Note& other);
+
 	uint64_t GetId() const	{return m_Id;}
 
 	const std::string& GetTitle() const	{return m_Title;}
@@ -39,5 +41,14 @@ private:
 	std::string m_Title;
 	std::string m_Message;
 };
+
+inline Note& Note::operator=(const Note& other)
+{
+	if (this == &other)
+		return *this;
+
+	m_Title = other.m_Title;
+	m_Message = other.m_Message;
+}
 
 } // namespace NoteVault

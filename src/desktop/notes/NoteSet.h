@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <vector>
 #include <iterator>
+#include <algorithm>
 
 namespace NoteVault
 {
@@ -53,6 +54,9 @@ public:
 
 	const_iterator begin() const;
 	const_iterator end() const;
+
+	template <typename Pred>
+	void sort(const Pred& pred);
 
 private:
 	using NoteMap = std::unordered_map<uint64_t, Note>;
@@ -141,6 +145,15 @@ private:
 	OrderList::const_iterator m_Iter;
 	const Note* m_CurNote;
 };
+
+template <typename Pred>
+void NoteSet::sort(const Pred& pred)
+{
+	std::sort(m_Order.begin(), m_Order.end(), [this, &pred] (size_t left, size_t right) -> bool
+		{
+			return pred(m_Notes.find(left)->second, m_Notes.find(right)->second);
+		});
+}
 
 inline NoteSet::iterator::reference NoteSet::iterator::operator*() const
 {
