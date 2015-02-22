@@ -28,7 +28,7 @@ class wxButton;
 namespace NoteVault
 {
 
-class UndoStack;
+class Note;
 
 class MainWindow : public wxFrame
 {
@@ -37,6 +37,10 @@ public:
 
 private:
 	struct NoteContext;
+	class NoteCommand;
+	class AddCommand;
+	class RemoveCommand;
+	class RenameCommand;
 
 	void OnNew(wxCommandEvent& event);
 	void OnOpen(wxCommandEvent& event);
@@ -59,16 +63,18 @@ private:
 	void OnRemoveNote(wxCommandEvent& event);
 
 	void OnTitleEdit(wxListEvent& event);
+	void OnTitleKeyDown(wxListEvent& event);
 	void OnSelectNote(wxListEvent& event);
 	void OnDeselectNote(wxListEvent& event);
 
-	static wxCommandProcessor* GetUndoStack();
+	wxCommandProcessor* GetUndoStack();
 	static wxTextEntry* GetTextEntry();
 	static wxRichTextCtrl* GetRichTextCtrl();
 	void UpdateMenuItems();
 	void UpdateUi();
 	void UpdateForSelection(long item);
 	void UpdateForDeselection();
+	void UpdateCommands(const Note& note);
 	void Sort();
 
 	wxMenuItem* m_UndoItem;
@@ -78,11 +84,13 @@ private:
 	wxMenuItem* m_PasteItem;
 	wxMenuItem* m_DeleteItem;
 	wxMenuItem* m_SelectAllItem;
+	wxMenuItem* m_RemoveNoteItem;
 
 	wxListCtrl* m_NoteList;
 	wxRichTextCtrl* m_NoteText;
 	wxButton* m_RemoveButton;
 
+	wxCommandProcessor* m_UndoStack;
 	std::unique_ptr<NoteContext> m_Notes;
 	bool m_IgnoreSelectionChanges;
 	bool m_SortNextUpdate;

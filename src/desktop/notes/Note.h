@@ -49,6 +49,7 @@ inline Note& Note::operator=(const Note& other)
 
 	m_Title = other.m_Title;
 	m_Message = other.m_Message;
+	return *this;
 }
 
 } // namespace NoteVault

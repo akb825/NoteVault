@@ -50,6 +50,8 @@ wxBEGIN_EVENT_TABLE(MainWindow, wxFrame)
 	EVT_MENU(wxID_PASTE, MainWindow::OnPaste)
 	EVT_MENU(wxID_DELETE, MainWindow::OnDelete)
 	EVT_MENU(wxID_SELECTALL, MainWindow::OnSelectAll)
+	EVT_MENU(wxID_ADD, MainWindow::OnAddNote)
+	EVT_MENU(wxID_REMOVE, MainWindow::OnRemoveNote)
 
 	EVT_MENU(wxID_ABOUT, MainWindow::OnAbout)
 
@@ -61,6 +63,7 @@ wxBEGIN_EVENT_TABLE(MainWindow, wxFrame)
 	EVT_BUTTON(cIdRemoveButton, MainWindow::OnRemoveNote)
 
 	EVT_LIST_END_LABEL_EDIT(cIdNoteList, MainWindow::OnTitleEdit)
+	EVT_LIST_KEY_DOWN(cIdNoteList, MainWindow::OnTitleKeyDown)
 	EVT_LIST_ITEM_SELECTED(cIdNoteList, MainWindow::OnSelectNote)
 	EVT_LIST_ITEM_DESELECTED(cIdNoteList, MainWindow::OnDeselectNote)
 wxEND_EVENT_TABLE()
@@ -77,6 +80,120 @@ struct MainWindow::NoteContext
 	std::string saveLocation;
 
 	NoteSet::iterator selectedNote;
+};
+
+class MainWindow::NoteCommand : public wxCommand
+{
+public:
+	NoteCommand(MainWindow& parent, const Note& note)
+		: m_Parent(&parent), m_Note(note)
+	{
+	}
+
+	uint64_t GetNoteId() const	{return m_Note.GetId();}
+	void UpdateNote(const Note& note)
+	{
+		if (note.GetId() != m_Note.GetId())
+			return;
+		m_Note = note;
+	}
+
+	bool CanUndo() const override	{return true;}
+
+protected:
+	MainWindow* m_Parent;
+	Note m_Note;
+};
+
+class MainWindow::AddCommand : public NoteCommand
+{
+public:
+	AddCommand(MainWindow& parent, const Note& note)
+		: NoteCommand(parent, note)
+	{
+	}
+
+	bool Do() override
+	{
+		NoteSet& noteSet = m_Parent->m_Notes->noteSet;
+		noteSet.insert(noteSet.end(), m_Note);
+		m_Parent->UpdateForDeselection();
+		m_Parent->Sort();
+		m_Parent->m_NoteList->SetItemState(noteSet.find(m_Note.GetId()) - noteSet.begin(),
+			wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+		return true;
+	}
+
+	bool Undo() override
+	{
+		NoteSet& noteSet = m_Parent->m_Notes->noteSet;
+		NoteSet::iterator foundIter = noteSet.find(m_Note.GetId());
+		m_Parent->m_NoteList->DeleteItem(foundIter - noteSet.begin());
+		noteSet.erase(foundIter);
+		m_Parent->UpdateForDeselection();
+		return true;
+	}
+};
+
+class MainWindow::RemoveCommand : public AddCommand
+{
+public:
+	RemoveCommand(MainWindow& parent, const Note& note)
+		: AddCommand(parent, note)
+	{
+	}
+
+	bool Do() override
+	{
+		return AddCommand::Undo();
+	}
+
+	bool Undo() override
+	{
+		return AddCommand::Do();
+	}
+};
+
+class MainWindow::RenameCommand : public wxCommand
+{
+public:
+	RenameCommand(MainWindow& parent, const Note& note, const std::string& oldName,
+		const std::string& newName)
+		: m_Parent(&parent), m_NoteId(note.GetId()), m_OldName(oldName), m_NewName(newName)
+	{
+	}
+
+	bool CanUndo() const override	{return true;}
+
+	bool Do() override
+	{
+		NoteSet& noteSet = m_Parent->m_Notes->noteSet;
+		Note& note = *noteSet.find(m_NoteId);
+		note.SetTitle(m_NewName);
+		m_Parent->UpdateCommands(note);
+		m_Parent->Sort();
+		m_Parent->m_NoteList->SetItemState(noteSet.find(m_NoteId) - noteSet.begin(),
+			wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+		return true;
+	}
+
+	bool Undo() override
+	{
+		NoteSet& noteSet = m_Parent->m_Notes->noteSet;
+		Note& note = *noteSet.find(m_NoteId);
+		note.SetTitle(m_OldName);
+		m_Parent->UpdateCommands(note);
+		m_Parent->Sort();
+		m_Parent->m_NoteList->SetItemState(noteSet.find(m_NoteId) - noteSet.begin(),
+			wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+		return true;
+	}
+
+private:
+	MainWindow* m_Parent;
+	uint64_t m_NoteId;
+	std::string m_OldName;
+	std::string m_NewName;
 };
 
 MainWindow::MainWindow(const wxString& title, const wxSize& size)
@@ -102,6 +219,9 @@ MainWindow::MainWindow(const wxString& title, const wxSize& size)
 	m_DeleteItem = editMenu->Append(wxID_DELETE, "", "");
 	editMenu->AppendSeparator();
 	m_SelectAllItem = editMenu->Append(wxID_SELECTALL, "", "");
+	editMenu->AppendSeparator();
+	editMenu->Append(wxID_ADD, "Add &Note\tCTRL+SHIFT+A", "");
+	m_RemoveNoteItem = editMenu->Append(wxID_REMOVE, "&Remove Note\tCTRL+SHIFT+R", "");
 
 	wxMenu* helpMenu = new wxMenu;
 	helpMenu->Append(wxID_ABOUT, "", "");
@@ -152,6 +272,7 @@ MainWindow::MainWindow(const wxString& title, const wxSize& size)
 
 	notePanel->SetSizerAndFit(vertSizer);
 
+	m_UndoStack = new wxCommandProcessor;
 	UpdateMenuItems();
 	UpdateUi();
 }
@@ -259,6 +380,11 @@ void MainWindow::OnIdle(wxIdleEvent&)
 
 void MainWindow::OnNoteTextChanged(wxCommandEvent&)
 {
+	if (m_Notes->selectedNote == m_Notes->noteSet.end())
+		return;
+
+	m_Notes->selectedNote->SetMessage(m_NoteText->GetValue().ToUTF8().data());
+	UpdateCommands(*m_Notes->selectedNote);
 }
 
 void MainWindow::OnAddNote(wxCommandEvent&)
@@ -271,6 +397,15 @@ void MainWindow::OnAddNote(wxCommandEvent&)
 
 void MainWindow::OnRemoveNote(wxCommandEvent&)
 {
+	if (m_Notes->selectedNote == m_Notes->noteSet.end())
+		return;
+
+	m_UndoStack->Store(new RemoveCommand(*this, *m_Notes->selectedNote));
+	long index = m_Notes->selectedNote - m_Notes->noteSet.begin();
+	m_Notes->noteSet.erase(m_Notes->selectedNote);
+	m_Notes->selectedNote = m_Notes->noteSet.end();
+	m_NoteList->DeleteItem(index);
+	UpdateForDeselection();
 }
 
 void MainWindow::OnTitleEdit(wxListEvent& event)
@@ -279,7 +414,10 @@ void MainWindow::OnTitleEdit(wxListEvent& event)
 	if (event.IsEditCancelled())
 	{
 		if (newNote)
+		{
 			m_NoteList->DeleteItem(event.GetIndex());
+			UpdateForDeselection();
+		}
 		return;
 	}
 
@@ -288,12 +426,31 @@ void MainWindow::OnTitleEdit(wxListEvent& event)
 	{
 		m_Notes->selectedNote = m_Notes->noteSet.insert(m_Notes->noteSet.end());
 		note = &*m_Notes->selectedNote;
+		UpdateForSelection(m_Notes->selectedNote - m_Notes->noteSet.begin());
 	}
 	else
 		note = &m_Notes->noteSet[event.GetIndex()];
 
-	note->SetTitle(event.GetLabel().ToUTF8().data());
+	std::string oldName = note->GetTitle();
+	std::string newName = event.GetLabel().ToUTF8().data();
+	note->SetTitle(newName);
+
+	if (newNote)
+		m_UndoStack->Store(new AddCommand(*this, *note));
+	else
+	{
+		m_UndoStack->Store(new RenameCommand(*this, *note, oldName, newName));
+		UpdateCommands(*note);
+	}
 	m_SortNextUpdate = true;
+}
+
+void MainWindow::OnTitleKeyDown(wxListEvent& event)
+{
+	if (event.GetKeyCode() == WXK_F2)
+		m_NoteList->EditLabel(event.GetIndex());
+	else
+		event.Skip();
 }
 
 void MainWindow::OnSelectNote(wxListEvent& event)
@@ -313,8 +470,10 @@ wxCommandProcessor* MainWindow::GetUndoStack()
 	wxRichTextCtrl* textControl = dynamic_cast<wxRichTextCtrl*>(FindFocus());
 	if (textControl)
 		return textControl->GetCommandProcessor();
-
-	return nullptr;
+	else if (GetTextEntry())
+		return nullptr;
+	else
+		return m_UndoStack;
 }
 
 wxTextEntry* MainWindow::GetTextEntry()
@@ -394,12 +553,34 @@ void MainWindow::UpdateUi()
 
 void MainWindow::UpdateForSelection(long item)
 {
+	if ((size_t)item >= m_Notes->noteSet.size())
+		return;
+
 	m_Notes->selectedNote = m_Notes->noteSet.begin() + item;
+	m_RemoveButton->Enable();
+	m_RemoveNoteItem->Enable();
+	m_NoteText->Enable();
+	m_NoteText->SetValue(wxString::FromUTF8(m_Notes->selectedNote->GetMessage().c_str()));
+	m_NoteText->GetCommandProcessor()->ClearCommands();
 }
 
 void MainWindow::UpdateForDeselection()
 {
 	m_Notes->selectedNote = m_Notes->noteSet.end();
+	m_RemoveButton->Disable();
+	m_RemoveNoteItem->Enable(false);
+	m_NoteText->Disable();
+	m_NoteText->Clear();
+	m_NoteText->GetCommandProcessor()->ClearCommands();
+}
+
+void MainWindow::UpdateCommands(const Note& note)
+{
+	for (wxObject* command : m_UndoStack->GetCommands())
+	{
+		if (NoteCommand* noteCommand = dynamic_cast<NoteCommand*>(command))
+			noteCommand->UpdateNote(note);
+	}
 }
 
 void MainWindow::Sort()
