@@ -30,7 +30,7 @@ public:
 	static const unsigned int cBlockLenBytes = cBlockLen/8;
 	static const unsigned int cSaltLen = 128;
 	static const unsigned int cSaltLenBytes = cSaltLen/8;
-	static const unsigned int cDefaultKeyIterations = 64000;
+	static const unsigned int cDefaultKeyIterations = 100000;
 
 	static void Initialize();
 	static std::vector<uint8_t> GenerateKey(const std::string& password,

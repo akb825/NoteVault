@@ -16,7 +16,10 @@
 
 #include "MainWindow.h"
 #include "../notes/NoteSet.h"
+#include "../io/Crypto.h"
 #include "../io/NoteFile.h"
+#include "../io/FileIStream.h"
+#include "../io/FileOStream.h"
 #include <wx/richtext/richtextctrl.h>
 #include <wx/splitter.h>
 #include <wx/panel.h>
@@ -26,6 +29,9 @@
 #include <wx/button.h>
 #include <wx/sizer.h>
 #include <wx/menu.h>
+#include <wx/filedlg.h>
+#include <wx/aboutdlg.h>
+#include <wx/textdlg.h>
 #include <wx/msgdlg.h>
 
 #define VERSION "0.1"
@@ -41,6 +47,8 @@ static const int cIdRemoveButton = wxWindow::NewControlId();
 wxBEGIN_EVENT_TABLE(MainWindow, wxFrame)
 	EVT_MENU(wxID_NEW, MainWindow::OnNew)
 	EVT_MENU(wxID_OPEN, MainWindow::OnOpen)
+	EVT_MENU(wxID_SAVE, MainWindow::OnSave)
+	EVT_MENU(wxID_SAVEAS, MainWindow::OnSaveAs)
 	EVT_MENU(wxID_EXIT, MainWindow::OnExit)
 
 	EVT_MENU(wxID_UNDO, MainWindow::OnUndo)
@@ -55,7 +63,7 @@ wxBEGIN_EVENT_TABLE(MainWindow, wxFrame)
 
 	EVT_MENU(wxID_ABOUT, MainWindow::OnAbout)
 
-	EVT_IDLE(MainWindow::OnIdle)
+	EVT_CLOSE(MainWindow::OnClose)
 
 	EVT_TEXT(cIdNoteText, MainWindow::OnNoteTextChanged)
 
@@ -71,13 +79,17 @@ wxEND_EVENT_TABLE()
 struct MainWindow::NoteContext
 {
 	NoteContext()
-		: selectedNote(noteSet.end())
+		: dirty(false), selectedNote(noteSet.end()) 
 	{
 	}
 
 	NoteSet noteSet;
 	std::vector<uint8_t> key;
-	std::string saveLocation;
+	std::vector<uint8_t> salt;
+	std::string savePath;
+
+	bool dirty;
+	std::string fileName;
 
 	NoteSet::iterator selectedNote;
 };
@@ -121,6 +133,7 @@ public:
 		m_Parent->Sort();
 		m_Parent->m_NoteList->SetItemState(noteSet.find(m_Note.GetId()) - noteSet.begin(),
 			wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+		m_Parent->MarkDirty();
 		return true;
 	}
 
@@ -131,6 +144,7 @@ public:
 		m_Parent->m_NoteList->DeleteItem(foundIter - noteSet.begin());
 		noteSet.erase(foundIter);
 		m_Parent->UpdateForDeselection();
+		m_Parent->MarkDirty();
 		return true;
 	}
 };
@@ -174,6 +188,7 @@ public:
 		m_Parent->Sort();
 		m_Parent->m_NoteList->SetItemState(noteSet.find(m_NoteId) - noteSet.begin(),
 			wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+		m_Parent->MarkDirty();
 		return true;
 	}
 
@@ -186,6 +201,7 @@ public:
 		m_Parent->Sort();
 		m_Parent->m_NoteList->SetItemState(noteSet.find(m_NoteId) - noteSet.begin(),
 			wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+		m_Parent->MarkDirty();
 		return true;
 	}
 
@@ -206,6 +222,9 @@ MainWindow::MainWindow(const wxString& title, const wxSize& size)
 	wxMenu* fileMenu = new wxMenu;
 	fileMenu->Append(wxID_NEW, "", "");
 	fileMenu->Append(wxID_OPEN, "", "");
+	fileMenu->AppendSeparator();
+	fileMenu->Append(wxID_SAVE, "", "");
+	fileMenu->Append(wxID_SAVEAS, "Save &As...\tCTRL+SHIFT+S", "");
 	fileMenu->AppendSeparator();
 	fileMenu->Append(wxID_EXIT, "", "");
 
@@ -273,8 +292,23 @@ MainWindow::MainWindow(const wxString& title, const wxSize& size)
 	notePanel->SetSizerAndFit(vertSizer);
 
 	m_UndoStack = new wxCommandProcessor;
+
+	const char* cFileFilter = "Secure note files (*.secnote)|*.secnote";
+	std::string homeDir;
+#if _WIN32
+	homeDir = std::getenv("HOMEDRIVE");
+	homeDir += std::getenv("HOMEPATH");
+#else
+	homeDir = std::getenv("HOME");
+#endif
+	m_OpenDialog = new wxFileDialog(this, "Open Notes", wxString::FromUTF8(homeDir.c_str()),
+		wxEmptyString, cFileFilter, wxFD_OPEN | wxFD_CHANGE_DIR | wxFD_FILE_MUST_EXIST);
+	m_SaveDialog = new wxFileDialog(this, "Save Notes", wxString::FromUTF8(homeDir.c_str()),
+		wxEmptyString, cFileFilter, wxFD_SAVE | wxFD_CHANGE_DIR | wxFD_OVERWRITE_PROMPT);
+
 	UpdateMenuItems();
 	UpdateUi();
+	UpdateTitle();
 }
 
 void MainWindow::OnExit(wxCommandEvent&)
@@ -284,13 +318,91 @@ void MainWindow::OnExit(wxCommandEvent&)
 
 void MainWindow::OnNew(wxCommandEvent&)
 {
-	m_Notes.reset(new NoteContext);
-	UpdateUi();
+	Clear();
 }
 
 void MainWindow::OnOpen(wxCommandEvent&)
 {
-	printf("open\n");
+	if (m_Notes->dirty)
+	{
+		int result = wxMessageBox("Save changes before closing?", "Save changes?",
+			wxICON_QUESTION | wxYES_NO | wxCANCEL, this);
+		if (result == wxCANCEL)
+			return;
+		else if (result == wxYES)
+		{
+			if (!Save())
+				return;
+		}
+	}
+
+	if (m_OpenDialog->ShowModal() != wxID_OK)
+		return;
+
+	std::string password = wxGetPasswordFromUser("Password:", wxGetPasswordFromUserPromptStr,
+		wxEmptyString, this).ToUTF8().data();
+
+	if (password.empty())
+		return;
+
+	std::string savePath = m_OpenDialog->GetPath().ToUTF8().data();
+	std::string fileName = m_OpenDialog->GetFilename().ToUTF8().data();
+	size_t extensionPos = fileName.find_last_of('.');
+	if (extensionPos != std::string::npos)
+		fileName = fileName.substr(0, extensionPos);
+
+	FileIStream stream;
+	if (!stream.Open(savePath))
+	{
+		std::string message = "Couldn't open file '" + savePath + "'";
+		wxMessageBox(wxString::FromUTF8(message.c_str()), "Couldn't load",
+			wxICON_ERROR | wxOK_DEFAULT, this);
+		return;
+	}
+
+	std::vector<uint8_t> salt, key;
+	NoteSet noteSet;
+	NoteFile::Result result = NoteFile::LoadNotes(noteSet, stream, password, salt, key);
+	switch (result)
+	{
+		case NoteFile::Result::Success:
+			Clear();
+			m_Notes->noteSet = noteSet;
+			m_Notes->savePath = savePath;
+			m_Notes->fileName = fileName;
+			m_Notes->salt = salt;
+			m_Notes->key = key;
+
+			UpdateTitle();
+			UpdateUi();
+			break;
+		case NoteFile::Result::InvalidFile:
+			wxMessageBox("Invalid file format", "Invalid file", wxICON_EXCLAMATION | wxOK_DEFAULT,
+				this);
+			break;
+		case NoteFile::Result::InvalidVersion:
+			wxMessageBox("File version is too new", "Invalid file",
+				wxICON_EXCLAMATION | wxOK_DEFAULT, this);
+			break;
+		case NoteFile::Result::IoError:
+			wxMessageBox("Error loading file", "Couldn't load", wxICON_ERROR | wxOK_DEFAULT,
+				this);
+			break;
+		case NoteFile::Result::EncryptionError:
+			wxMessageBox("Incorrect password", "Incorrect password",
+				wxICON_EXCLAMATION | wxOK_DEFAULT, this);
+			break;
+	}
+}
+
+void MainWindow::OnSave(wxCommandEvent&)
+{
+	Save();
+}
+
+void MainWindow::OnSaveAs(wxCommandEvent&)
+{
+	SaveAs();
 }
 
 void MainWindow::OnUndo(wxCommandEvent&)
@@ -364,27 +476,46 @@ void MainWindow::OnSelectAll(wxCommandEvent&)
 
 void MainWindow::OnAbout(wxCommandEvent&)
 {
-	wxMessageBox(L"NoteVault version " VERSION "\nCopyright \u00A9 2015 Aaron Barany",
-		"About NoteVault", wxOK, this);
+	wxAboutDialogInfo info;
+	info.SetName("Note Vault");
+	info.SetVersion(VERSION);
+	info.SetDescription("Store your notes securely without relying on an online service.");
+	info.SetCopyright(wxT("Copyright \u00A9 2015 Aaron Barany"));
+	wxAboutBox(info, this);
 }
 
-void MainWindow::OnIdle(wxIdleEvent&)
+void MainWindow::OnClose(wxCloseEvent& event)
 {
-	if (m_SortNextUpdate)
+	if (event.CanVeto() && m_Notes->dirty)
 	{
-		Sort();
-		m_SortNextUpdate = false;
+		int result = wxMessageBox("Save changes before closing?", "Save changes?",
+			wxICON_QUESTION | wxYES_NO | wxCANCEL, this);
+		if (result == wxCANCEL)
+		{
+			event.Veto();
+			return;
+		}
+		else if (result == wxYES)
+		{
+			if (!Save())
+			{
+				event.Veto();
+				return;
+			}
+		}
 	}
-	UpdateMenuItems();
+
+	event.Skip();
 }
 
 void MainWindow::OnNoteTextChanged(wxCommandEvent&)
 {
-	if (m_Notes->selectedNote == m_Notes->noteSet.end())
+	if (m_IgnoreSelectionChanges || m_Notes->selectedNote == m_Notes->noteSet.end())
 		return;
 
 	m_Notes->selectedNote->SetMessage(m_NoteText->GetValue().ToUTF8().data());
 	UpdateCommands(*m_Notes->selectedNote);
+	MarkDirty();
 }
 
 void MainWindow::OnAddNote(wxCommandEvent&)
@@ -406,6 +537,7 @@ void MainWindow::OnRemoveNote(wxCommandEvent&)
 	m_Notes->selectedNote = m_Notes->noteSet.end();
 	m_NoteList->DeleteItem(index);
 	UpdateForDeselection();
+	MarkDirty();
 }
 
 void MainWindow::OnTitleEdit(wxListEvent& event)
@@ -443,6 +575,8 @@ void MainWindow::OnTitleEdit(wxListEvent& event)
 		UpdateCommands(*note);
 	}
 	m_SortNextUpdate = true;
+
+	MarkDirty();
 }
 
 void MainWindow::OnTitleKeyDown(wxListEvent& event)
@@ -455,14 +589,12 @@ void MainWindow::OnTitleKeyDown(wxListEvent& event)
 
 void MainWindow::OnSelectNote(wxListEvent& event)
 {
-	if (!m_IgnoreSelectionChanges)
-		UpdateForSelection(event.GetIndex());
+	UpdateForSelection(event.GetIndex());
 }
 
 void MainWindow::OnDeselectNote(wxListEvent&)
 {
-	if (!m_IgnoreSelectionChanges)
-		UpdateForDeselection();
+	UpdateForDeselection();
 }
 
 wxCommandProcessor* MainWindow::GetUndoStack()
@@ -484,6 +616,16 @@ wxTextEntry* MainWindow::GetTextEntry()
 wxRichTextCtrl* MainWindow::GetRichTextCtrl()
 {
 	return dynamic_cast<wxRichTextCtrl*>(FindFocus());
+}
+
+void MainWindow::UpdateWindowUI(long flags)
+{
+	if (m_SortNextUpdate)
+	{
+		Sort();
+		m_SortNextUpdate = false;
+	}
+	UpdateMenuItems();
 }
 
 void MainWindow::UpdateMenuItems()
@@ -547,31 +689,37 @@ void MainWindow::UpdateUi()
 	}
 	m_NoteList->SetColumnWidth(0, wxLIST_AUTOSIZE);
 
-	if (!m_IgnoreSelectionChanges)
-		UpdateForDeselection();
+	UpdateForDeselection();
 }
 
 void MainWindow::UpdateForSelection(long item)
 {
-	if ((size_t)item >= m_Notes->noteSet.size())
+	if (m_IgnoreSelectionChanges || (size_t)item >= m_Notes->noteSet.size())
 		return;
 
+	m_IgnoreSelectionChanges = true;
 	m_Notes->selectedNote = m_Notes->noteSet.begin() + item;
 	m_RemoveButton->Enable();
 	m_RemoveNoteItem->Enable();
 	m_NoteText->Enable();
 	m_NoteText->SetValue(wxString::FromUTF8(m_Notes->selectedNote->GetMessage().c_str()));
 	m_NoteText->GetCommandProcessor()->ClearCommands();
+	m_IgnoreSelectionChanges = false;
 }
 
 void MainWindow::UpdateForDeselection()
 {
+	if (m_IgnoreSelectionChanges)
+		return;
+
+	m_IgnoreSelectionChanges = true;
 	m_Notes->selectedNote = m_Notes->noteSet.end();
 	m_RemoveButton->Disable();
 	m_RemoveNoteItem->Enable(false);
 	m_NoteText->Disable();
 	m_NoteText->Clear();
 	m_NoteText->GetCommandProcessor()->ClearCommands();
+	m_IgnoreSelectionChanges = false;
 }
 
 void MainWindow::UpdateCommands(const Note& note)
@@ -581,6 +729,21 @@ void MainWindow::UpdateCommands(const Note& note)
 		if (NoteCommand* noteCommand = dynamic_cast<NoteCommand*>(command))
 			noteCommand->UpdateNote(note);
 	}
+}
+
+void MainWindow::UpdateTitle()
+{
+	std::string title = "Note Vault";
+	if (!m_Notes->fileName.empty())
+	{
+		title += " - ";
+		title += m_Notes->fileName;
+	}
+
+	if (m_Notes->dirty)
+		title += " *";
+
+	SetTitle(wxString::FromUTF8(title.c_str()));
 }
 
 void MainWindow::Sort()
@@ -609,6 +772,63 @@ void MainWindow::Sort()
 
 	m_NoteList->SetColumnWidth(0, wxLIST_AUTOSIZE);
 	m_IgnoreSelectionChanges = false;
+}
+
+void MainWindow::Clear()
+{
+	m_Notes.reset(new NoteContext);
+	m_UndoStack->ClearCommands();
+	UpdateUi();
+	UpdateTitle();
+}
+
+bool MainWindow::Save()
+{
+	if (m_Notes->savePath.empty())
+		return SaveAs();
+
+	m_Notes->dirty = false;
+	UpdateTitle();
+	FileOStream stream;
+	if (!stream.Open(m_Notes->savePath) || NoteFile::SaveNotes(m_Notes->noteSet, stream,
+		m_Notes->salt, m_Notes->key) != NoteFile::Result::Success)
+	{
+		wxMessageBox("Error saving file.", "Couldn't save", wxICON_ERROR | wxOK_DEFAULT, this);
+		return false;
+	}
+	return true;
+}
+
+bool MainWindow::SaveAs()
+{
+	if (m_SaveDialog->ShowModal() != wxID_OK)
+		return false;
+
+	std::string password = wxGetPasswordFromUser("Password:", wxGetPasswordFromUserPromptStr,
+		wxEmptyString, this).ToUTF8().data();
+
+	if (password.empty())
+		return false;
+
+	m_Notes->savePath = m_SaveDialog->GetPath().ToUTF8().data();
+	size_t extensionPos = m_Notes->savePath.find_last_of('.');
+	if (extensionPos == std::string::npos)
+		m_Notes->savePath += ".secnote";
+
+	m_Notes->fileName = m_SaveDialog->GetFilename().ToUTF8().data();
+	extensionPos = m_Notes->fileName.find_last_of('.');
+	if (extensionPos != std::string::npos)
+		m_Notes->fileName = m_Notes->fileName.substr(0, extensionPos);
+
+	m_Notes->salt = Crypto::Random(Crypto::cSaltLenBytes);
+	m_Notes->key = Crypto::GenerateKey(password, m_Notes->salt, Crypto::cDefaultKeyIterations);
+	return Save();
+}
+
+void MainWindow::MarkDirty()
+{
+	m_Notes->dirty = true;
+	UpdateTitle();
 }
 
 } // namespace NoteVault

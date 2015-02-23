@@ -24,6 +24,7 @@ class wxCommandProcessor;
 class wxTextEntry;
 class wxMenuItem;
 class wxButton;
+class wxFileDialog;
 
 namespace NoteVault
 {
@@ -41,9 +42,12 @@ private:
 	class AddCommand;
 	class RemoveCommand;
 	class RenameCommand;
+	class PasswordDialog;
 
 	void OnNew(wxCommandEvent& event);
 	void OnOpen(wxCommandEvent& event);
+	void OnSave(wxCommandEvent& event);
+	void OnSaveAs(wxCommandEvent& event);
 	void OnExit(wxCommandEvent& event);
 
 	void OnUndo(wxCommandEvent& event);
@@ -56,7 +60,7 @@ private:
 
 	void OnAbout(wxCommandEvent& event);
 
-	void OnIdle(wxIdleEvent& event);
+	void OnClose(wxCloseEvent& event);
 
 	void OnNoteTextChanged(wxCommandEvent& event);
 	void OnAddNote(wxCommandEvent& event);
@@ -70,12 +74,22 @@ private:
 	wxCommandProcessor* GetUndoStack();
 	static wxTextEntry* GetTextEntry();
 	static wxRichTextCtrl* GetRichTextCtrl();
+
+	void UpdateWindowUI(long flags) override;
+
 	void UpdateMenuItems();
 	void UpdateUi();
 	void UpdateForSelection(long item);
 	void UpdateForDeselection();
 	void UpdateCommands(const Note& note);
+	void UpdateTitle();
+
 	void Sort();
+
+	void Clear();
+	bool Save();
+	bool SaveAs();
+	void MarkDirty();
 
 	wxMenuItem* m_UndoItem;
 	wxMenuItem* m_RedoItem;
@@ -89,6 +103,9 @@ private:
 	wxListCtrl* m_NoteList;
 	wxRichTextCtrl* m_NoteText;
 	wxButton* m_RemoveButton;
+
+	wxFileDialog* m_OpenDialog;
+	wxFileDialog* m_SaveDialog;
 
 	wxCommandProcessor* m_UndoStack;
 	std::unique_ptr<NoteContext> m_Notes;
