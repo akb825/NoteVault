@@ -43,6 +43,7 @@ public:
 				if (encryptSize > static_cast<int>(m_Buffer.size()))
 					throw std::overflow_error("Buffer overflow!");
 				size_t writeSize = m_ParentStream->Write(m_Buffer.data(), encryptSize);
+				(void)writeSize;
 				assert(static_cast<int>(writeSize) == encryptSize);
 			}
 			else
