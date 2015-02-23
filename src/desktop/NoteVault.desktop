@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=0.1
+Name=Note Vault
+Comment=Save notes securely
+Exec=NoteVault
+Icon=NoteVault
+Terminal=false
+Categories=Accessories
+MimeType=application/x-secure-note

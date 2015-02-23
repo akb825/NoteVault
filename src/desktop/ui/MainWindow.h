@@ -34,7 +34,7 @@ class Note;
 class MainWindow : public wxFrame
 {
 public:
-	MainWindow(const wxString& title, const wxSize& size);
+	MainWindow(const wxString& title, const wxSize& size, const std::string& initialFile);
 
 private:
 	struct NoteContext;
@@ -87,6 +87,7 @@ private:
 	void Sort();
 
 	void Clear();
+	bool Open(const std::string& savePath);
 	bool Save();
 	bool SaveAs();
 	void MarkDirty();

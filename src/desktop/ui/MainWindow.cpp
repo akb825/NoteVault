@@ -212,7 +212,7 @@ private:
 	std::string m_NewName;
 };
 
-MainWindow::MainWindow(const wxString& title, const wxSize& size)
+MainWindow::MainWindow(const wxString& title, const wxSize& size, const std::string& initialFile)
 	: wxFrame(nullptr, wxID_ANY, title, wxDefaultPosition, size), m_Notes(new NoteContext),
 	m_IgnoreSelectionChanges(false), m_SortNextUpdate(false)
 {
@@ -309,6 +309,9 @@ MainWindow::MainWindow(const wxString& title, const wxSize& size)
 	UpdateMenuItems();
 	UpdateUi();
 	UpdateTitle();
+
+	if (!initialFile.empty())
+		Open(initialFile);
 }
 
 void MainWindow::OnExit(wxCommandEvent&)
@@ -339,60 +342,7 @@ void MainWindow::OnOpen(wxCommandEvent&)
 	if (m_OpenDialog->ShowModal() != wxID_OK)
 		return;
 
-	std::string password = wxGetPasswordFromUser("Password:", wxGetPasswordFromUserPromptStr,
-		wxEmptyString, this).ToUTF8().data();
-
-	if (password.empty())
-		return;
-
-	std::string savePath = m_OpenDialog->GetPath().ToUTF8().data();
-	std::string fileName = m_OpenDialog->GetFilename().ToUTF8().data();
-	size_t extensionPos = fileName.find_last_of('.');
-	if (extensionPos != std::string::npos)
-		fileName = fileName.substr(0, extensionPos);
-
-	FileIStream stream;
-	if (!stream.Open(savePath))
-	{
-		std::string message = "Couldn't open file '" + savePath + "'";
-		wxMessageBox(wxString::FromUTF8(message.c_str()), "Couldn't load",
-			wxICON_ERROR | wxOK_DEFAULT, this);
-		return;
-	}
-
-	std::vector<uint8_t> salt, key;
-	NoteSet noteSet;
-	NoteFile::Result result = NoteFile::LoadNotes(noteSet, stream, password, salt, key);
-	switch (result)
-	{
-		case NoteFile::Result::Success:
-			Clear();
-			m_Notes->noteSet = noteSet;
-			m_Notes->savePath = savePath;
-			m_Notes->fileName = fileName;
-			m_Notes->salt = salt;
-			m_Notes->key = key;
-
-			UpdateTitle();
-			UpdateUi();
-			break;
-		case NoteFile::Result::InvalidFile:
-			wxMessageBox("Invalid file format", "Invalid file", wxICON_EXCLAMATION | wxOK_DEFAULT,
-				this);
-			break;
-		case NoteFile::Result::InvalidVersion:
-			wxMessageBox("File version is too new", "Invalid file",
-				wxICON_EXCLAMATION | wxOK_DEFAULT, this);
-			break;
-		case NoteFile::Result::IoError:
-			wxMessageBox("Error loading file", "Couldn't load", wxICON_ERROR | wxOK_DEFAULT,
-				this);
-			break;
-		case NoteFile::Result::EncryptionError:
-			wxMessageBox("Incorrect password", "Incorrect password",
-				wxICON_EXCLAMATION | wxOK_DEFAULT, this);
-			break;
-	}
+	Open(m_OpenDialog->GetPath().ToUTF8().data());
 }
 
 void MainWindow::OnSave(wxCommandEvent&)
@@ -780,6 +730,73 @@ void MainWindow::Clear()
 	m_UndoStack->ClearCommands();
 	UpdateUi();
 	UpdateTitle();
+}
+
+bool MainWindow::Open(const std::string& savePath)
+{
+	FileIStream stream;
+	if (!stream.Open(savePath))
+	{
+		std::string message = "Couldn't open file '" + savePath + "'";
+		wxMessageBox(wxString::FromUTF8(message.c_str()), "Couldn't load",
+			wxICON_ERROR | wxOK_DEFAULT, this);
+		return false;
+	}
+
+	std::string password = wxGetPasswordFromUser("Password:", wxGetPasswordFromUserPromptStr,
+		wxEmptyString, this).ToUTF8().data();
+
+	if (password.empty())
+		return false;
+
+	std::string fileName = savePath;
+#if _WIN32
+	size_t lastSeparator = fileName.find_last_of("/\\");
+#else
+	size_t lastSeparator = fileName.find_last_of('/');
+#endif
+	if (lastSeparator != std::string::npos)
+		fileName = fileName.substr(lastSeparator + 1);
+
+	size_t extensionPos = fileName.find_last_of('.');
+	if (extensionPos != std::string::npos)
+		fileName = fileName.substr(0, extensionPos);
+
+	std::vector<uint8_t> salt, key;
+	NoteSet noteSet;
+	NoteFile::Result result = NoteFile::LoadNotes(noteSet, stream, password, salt, key);
+	switch (result)
+	{
+		case NoteFile::Result::Success:
+			Clear();
+			m_Notes->noteSet = noteSet;
+			m_Notes->savePath = savePath;
+			m_Notes->fileName = fileName;
+			m_Notes->salt = salt;
+			m_Notes->key = key;
+
+			UpdateTitle();
+			UpdateUi();
+			return true;
+		case NoteFile::Result::InvalidFile:
+			wxMessageBox("Invalid file format", "Invalid file", wxICON_EXCLAMATION | wxOK_DEFAULT,
+				this);
+			break;
+		case NoteFile::Result::InvalidVersion:
+			wxMessageBox("File version is too new", "Invalid file",
+				wxICON_EXCLAMATION | wxOK_DEFAULT, this);
+			break;
+		case NoteFile::Result::IoError:
+			wxMessageBox("Error loading file", "Couldn't load", wxICON_ERROR | wxOK_DEFAULT,
+				this);
+			break;
+		case NoteFile::Result::EncryptionError:
+			wxMessageBox("Incorrect password", "Incorrect password",
+				wxICON_EXCLAMATION | wxOK_DEFAULT, this);
+			break;
+	}
+
+	return false;
 }
 
 bool MainWindow::Save()

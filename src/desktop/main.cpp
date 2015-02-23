@@ -34,7 +34,12 @@ public:
 	bool OnInit() override
 	{
 		NoteVault::Crypto::Initialize();
-		m_Window = new NoteVault::MainWindow("Note Vault", wxSize(800, 600));
+
+		std::string initialFile;
+		if (argc > 1)
+			initialFile = argv[1].ToUTF8();
+
+		m_Window = new NoteVault::MainWindow("Note Vault", wxSize(800, 600), initialFile);
 		m_Window->Show(true);
 		return true;
 	}

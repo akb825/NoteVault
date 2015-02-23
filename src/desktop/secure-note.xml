@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+	<mime-type type="application/x-secure-note">
+		<comment>Secure note opened by Note Vault</comment>
+		<generic-icon name="text-x-generic"/>
+		<glob pattern="*.secnote"/>
+	</mime-type>
+</mime-info>
