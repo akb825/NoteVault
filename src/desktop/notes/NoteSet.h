@@ -70,6 +70,8 @@ private:
 class NoteSet::iterator : public std::iterator<std::random_access_iterator_tag, Note>
 {
 public:
+	iterator();
+
 	reference operator*() const;
 	pointer operator->() const;
 	reference operator[](difference_type offset) const;
@@ -109,6 +111,7 @@ private:
 class NoteSet::const_iterator : public std::iterator<std::random_access_iterator_tag, const Note>
 {
 public:
+	const_iterator();
 	const_iterator(const NoteSet::iterator& iter);
 
 	reference operator*() const;
@@ -153,6 +156,11 @@ void NoteSet::sort(const Pred& pred)
 		{
 			return pred(m_Notes.find(left)->second, m_Notes.find(right)->second);
 		});
+}
+
+inline NoteSet::iterator::iterator()
+	: m_Notes(nullptr), m_CurNote(nullptr)
+{
 }
 
 inline NoteSet::iterator::reference NoteSet::iterator::operator*() const
@@ -273,6 +281,11 @@ inline void NoteSet::iterator::UpdateCurNote()
 		m_CurNote = nullptr;
 	else
 		m_CurNote = &m_Notes->m_Notes.find(*m_Iter)->second;
+}
+
+inline NoteSet::const_iterator::const_iterator()
+	: m_Notes(nullptr), m_CurNote(nullptr)
+{
 }
 
 inline NoteSet::const_iterator::const_iterator(const NoteSet::iterator& iter)

@@ -79,7 +79,7 @@ wxEND_EVENT_TABLE()
 struct MainWindow::NoteContext
 {
 	NoteContext()
-		: dirty(false), selectedNote(noteSet.end()) 
+		: dirty(false)
 	{
 	}
 
@@ -460,7 +460,7 @@ void MainWindow::OnClose(wxCloseEvent& event)
 
 void MainWindow::OnNoteTextChanged(wxCommandEvent&)
 {
-	if (m_IgnoreSelectionChanges || m_Notes->selectedNote == m_Notes->noteSet.end())
+	if (m_IgnoreSelectionChanges || m_Notes->selectedNote == NoteSet::iterator())
 		return;
 
 	m_Notes->selectedNote->SetMessage(m_NoteText->GetValue().ToUTF8().data());
@@ -478,13 +478,13 @@ void MainWindow::OnAddNote(wxCommandEvent&)
 
 void MainWindow::OnRemoveNote(wxCommandEvent&)
 {
-	if (m_Notes->selectedNote == m_Notes->noteSet.end())
+	if (m_Notes->selectedNote == NoteSet::iterator())
 		return;
 
 	m_UndoStack->Store(new RemoveCommand(*this, *m_Notes->selectedNote));
 	long index = m_Notes->selectedNote - m_Notes->noteSet.begin();
 	m_Notes->noteSet.erase(m_Notes->selectedNote);
-	m_Notes->selectedNote = m_Notes->noteSet.end();
+	m_Notes->selectedNote = NoteSet::iterator();
 	m_NoteList->DeleteItem(index);
 	UpdateForDeselection();
 	MarkDirty();
@@ -663,7 +663,7 @@ void MainWindow::UpdateForDeselection()
 		return;
 
 	m_IgnoreSelectionChanges = true;
-	m_Notes->selectedNote = m_Notes->noteSet.end();
+	m_Notes->selectedNote = NoteSet::iterator();
 	m_RemoveButton->Disable();
 	m_RemoveNoteItem->Enable(false);
 	m_NoteText->Disable();
@@ -702,7 +702,7 @@ void MainWindow::Sort()
 
 	const uint64_t cNotSelected = (uint64_t)-1;
 	uint64_t selectedNoteId = cNotSelected;
-	if (m_Notes->selectedNote != m_Notes->noteSet.end())
+	if (m_Notes->selectedNote != NoteSet::iterator())
 		selectedNoteId = m_Notes->selectedNote->GetId();
 	m_Notes->noteSet.sort([] (const Note& left, const Note& right) -> bool
 		{

@@ -189,7 +189,8 @@ NoteFile::Result NoteFile::LoadNotes(NoteSet& notes, IStream& stream, const std:
 		Note note(id);
 		note.SetTitle(title);
 		note.SetMessage(message);
-		if (notes.insert(notes.end(), note) == notes.end())
+		NoteSet::iterator insertIter = notes.insert(notes.end(), note);
+		if (insertIter == notes.end())
 			return Result::IoError;
 	}
 
