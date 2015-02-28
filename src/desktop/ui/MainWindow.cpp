@@ -34,7 +34,7 @@
 #include <wx/textdlg.h>
 #include <wx/msgdlg.h>
 
-#define VERSION "0.1"
+#define VERSION "0.2"
 
 namespace NoteVault
 {
