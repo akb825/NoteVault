@@ -22,19 +22,19 @@ namespace NoteVault
 
 NoteSet::iterator NoteSet::insert(const iterator& pos)
 {
-	uint64_t id = m_Ids.NewId();
+	uint64_t id = m_ids.newId();
 	Note note(id);
-	m_Notes.insert(NoteMap::value_type(id, note));
-	OrderList::iterator orderPos = m_Order.insert(pos.m_Iter, id);
+	m_notes.insert(NoteMap::value_type(id, note));
+	OrderList::iterator orderPos = m_order.insert(pos.m_Iter, id);
 	return iterator(*this, orderPos);
 }
 
 NoteSet::iterator NoteSet::insert(const iterator& pos, const Note& note)
 {
-	if (!m_Ids.AddId(note.GetId()))
+	if (!m_ids.addId(note.getId()))
 		return end();
-	m_Notes.insert(NoteMap::value_type(note.GetId(), note));
-	OrderList::iterator orderPos = m_Order.insert(pos.m_Iter, note.GetId());
+	m_notes.insert(NoteMap::value_type(note.getId(), note));
+	OrderList::iterator orderPos = m_order.insert(pos.m_Iter, note.getId());
 	return iterator(*this, orderPos);
 }
 
@@ -49,79 +49,79 @@ int NoteSet::erase(uint64_t id)
 
 NoteSet::iterator NoteSet::erase(const iterator& iter)
 {
-	m_Ids.RemoveId(iter->GetId());
-	m_Notes.erase(iter->GetId());
-	OrderList::iterator newIter = m_Order.erase(iter.m_Iter);
+	m_ids.removeId(iter->getId());
+	m_notes.erase(iter->getId());
+	OrderList::iterator newIter = m_order.erase(iter.m_Iter);
 	return iterator(*this, newIter);
 }
 
 NoteSet::iterator NoteSet::find(uint64_t id)
 {
-	OrderList::iterator foundIter = std::find(m_Order.begin(), m_Order.end(), id);
-	if (foundIter == m_Order.end())
+	OrderList::iterator foundIter = std::find(m_order.begin(), m_order.end(), id);
+	if (foundIter == m_order.end())
 		return end();
 	return iterator(*this, foundIter);
 }
 
 NoteSet::const_iterator NoteSet::find(uint64_t id) const
 {
-	OrderList::const_iterator foundIter = std::find(m_Order.begin(), m_Order.end(), id);
-	if (foundIter == m_Order.end())
+	OrderList::const_iterator foundIter = std::find(m_order.begin(), m_order.end(), id);
+	if (foundIter == m_order.end())
 		return end();
 	return const_iterator(*this, foundIter);
 }
 
 Note* NoteSet::find_note(uint64_t id)
 {
-	NoteMap::iterator foundIter = m_Notes.find(id);
-	if (foundIter == m_Notes.end())
+	NoteMap::iterator foundIter = m_notes.find(id);
+	if (foundIter == m_notes.end())
 		return nullptr;
 	return &foundIter->second;
 }
 
 const Note* NoteSet::find_note(uint64_t id) const
 {
-	NoteMap::const_iterator foundIter = m_Notes.find(id);
-	if (foundIter == m_Notes.end())
+	NoteMap::const_iterator foundIter = m_notes.find(id);
+	if (foundIter == m_notes.end())
 		return nullptr;
 	return &foundIter->second;
 }
 
 void NoteSet::clear()
 {
-	m_Notes.clear();
-	m_Order.clear();
-	m_Ids.Clear();
+	m_notes.clear();
+	m_order.clear();
+	m_ids.clear();
 }
 
 Note& NoteSet::operator[](size_t index)
 {
-	return m_Notes.find(m_Order[index])->second;
+	return m_notes.find(m_order[index])->second;
 }
 
 const Note& NoteSet::operator[](size_t index) const
 {
-	return m_Notes.find(m_Order[index])->second;
+	return m_notes.find(m_order[index])->second;
 }
 
 NoteSet::iterator NoteSet::begin()
 {
-	return iterator(*this, m_Order.begin());
+	return iterator(*this, m_order.begin());
 }
 
 NoteSet::const_iterator NoteSet::end() const
 {
-	return const_iterator(*this, m_Order.end());
+	return const_iterator(*this, m_order.end());
 }
 
 NoteSet::const_iterator NoteSet::begin() const
 {
-	return const_iterator(*this, m_Order.begin());
+	return const_iterator(*this, m_order.begin());
 }
 
 NoteSet::iterator NoteSet::end()
 {
-	return iterator(*this, m_Order.end());
+	return iterator(*this, m_order.end());
 }
 
 } // namespace NoteVault

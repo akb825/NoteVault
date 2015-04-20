@@ -21,42 +21,42 @@ namespace NoteVault
 {
 
 FileIStream::FileIStream()
-	: m_File(nullptr)
+	: m_file(nullptr)
 {
 }
 
 FileIStream::~FileIStream()
 {
-	Close();
+	close();
 }
 
-bool FileIStream::Open(const std::string& fileName)
+bool FileIStream::open(const std::string& fileName)
 {
-	Close();
+	close();
 
 	FILE* file = fopen(fileName.c_str(), "rb");
 	if (!file)
 		return false;
-	m_File = file;
+	m_file = file;
 	return true;
 }
 
-size_t FileIStream::Read(void* data, size_t size)
+size_t FileIStream::read(void* data, size_t size)
 {
-	if (!m_File)
+	if (!m_file)
 		return 0;
 
-	FILE* file = reinterpret_cast<FILE*>(m_File);
+	FILE* file = reinterpret_cast<FILE*>(m_file);
 	return fread(data, 1, size, file);
 }
 
-void FileIStream::Close()
+void FileIStream::close()
 {
-	if (!m_File)
+	if (!m_file)
 		return;
 
-	fclose(reinterpret_cast<FILE*>(m_File));
-	m_File = nullptr;
+	fclose(reinterpret_cast<FILE*>(m_file));
+	m_file = nullptr;
 }
 
 } // namespace NoteVault

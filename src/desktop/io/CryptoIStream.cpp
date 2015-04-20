@@ -29,17 +29,17 @@ class CryptoIStream::Impl
 {
 public:
 	Impl()
-		: m_ParentStream(nullptr), m_BufferSize(0), m_BufferPos(0) {}
+		: m_parentStream(nullptr), m_bufferSize(0), m_bufferPos(0) {}
 
 	~Impl()
 	{
-		EVP_CIPHER_CTX_cleanup(&m_CipherCtx);
+		EVP_CIPHER_CTX_cleanup(&m_cipherCtx);
 	}
 
-	bool Open(IStream& parentStream, const std::vector<uint8_t>& key,
+	bool open(IStream& parentStream, const std::vector<uint8_t>& key,
 		const std::vector<uint8_t>& iv)
 	{
-		EVP_CIPHER_CTX_init(&m_CipherCtx);
+		EVP_CIPHER_CTX_init(&m_cipherCtx);
 
 		const EVP_CIPHER* cipher = EVP_aes_256_cbc();
 		if (EVP_CIPHER_key_length(cipher) != Crypto::cKeyLenBytes)
@@ -51,61 +51,61 @@ public:
 		if (key.size() != Crypto::cKeyLenBytes || iv.size() != Crypto::cBlockLenBytes)
 			return false;
 
-		if (!EVP_DecryptInit_ex(&m_CipherCtx, cipher, nullptr, key.data(), iv.data()))
+		if (!EVP_DecryptInit_ex(&m_cipherCtx, cipher, nullptr, key.data(), iv.data()))
 			return false;
 
-		m_Buffer.resize(Crypto::cBlockLenBytes*2);
-		m_BufferSize = 0;
-		m_BufferPos = 0;
-		m_ParentStream = &parentStream;
+		m_buffer.resize(Crypto::cBlockLenBytes*2);
+		m_bufferSize = 0;
+		m_bufferPos = 0;
+		m_parentStream = &parentStream;
 		return true;
 	}
 
-	size_t Read(void* data, size_t size)
+	size_t read(void* data, size_t size)
 	{
-		assert(m_ParentStream);
+		assert(m_parentStream);
 		uint8_t* dataBytes = reinterpret_cast<uint8_t*>(data);
 
 		size_t readSize = 0;
 		while (readSize < size)
 		{
-			if (m_BufferPos < m_BufferSize)
+			if (m_bufferPos < m_bufferSize)
 			{
 				//Copy over from the buffer
-				size_t copySize = std::min(m_BufferSize - m_BufferPos, size - readSize);
-				memcpy(dataBytes + readSize, m_Buffer.data() + m_BufferPos, copySize);
+				size_t copySize = std::min(m_bufferSize - m_bufferPos, size - readSize);
+				memcpy(dataBytes + readSize, m_buffer.data() + m_bufferPos, copySize);
 				readSize += copySize;
-				m_BufferPos += copySize;
+				m_bufferPos += copySize;
 				assert(readSize <= size);
-				assert(m_BufferPos <= m_BufferSize);
+				assert(m_bufferPos <= m_bufferSize);
 			}
 			else
 			{
 				//Read into the buffer
 				uint8_t readBuffer[Crypto::cBlockLenBytes];
 				//Input must always be a multiple of the block size.
-				size_t streamReadSize = m_ParentStream->Read(readBuffer, Crypto::cBlockLenBytes);
+				size_t streamReadSize = m_parentStream->read(readBuffer, Crypto::cBlockLenBytes);
 
 				int decryptSize;
 				if (streamReadSize == 0)
 				{
 					//If we've reached the end of the stream, then it's the last block.
-					if (!EVP_DecryptFinal_ex(&m_CipherCtx, m_Buffer.data(), &decryptSize))
+					if (!EVP_DecryptFinal_ex(&m_cipherCtx, m_buffer.data(), &decryptSize))
 						return readSize;
 				}
 				else
 				{
-					if (!EVP_DecryptUpdate(&m_CipherCtx, m_Buffer.data(), &decryptSize, readBuffer,
+					if (!EVP_DecryptUpdate(&m_cipherCtx, m_buffer.data(), &decryptSize, readBuffer,
 						Crypto::cBlockLenBytes))
 					{
 						return readSize;
 					}
 				}
 
-				if (decryptSize > static_cast<int>(m_Buffer.size()))
+				if (decryptSize > static_cast<int>(m_buffer.size()))
 					throw std::overflow_error("Buffer overflow!");
-				m_BufferSize = decryptSize;
-				m_BufferPos = 0;
+				m_bufferSize = decryptSize;
+				m_bufferPos = 0;
 			}
 		}
 
@@ -113,49 +113,49 @@ public:
 	}
 
 private:
-	IStream* m_ParentStream;
-	EVP_CIPHER_CTX m_CipherCtx;
-	std::vector<uint8_t> m_Buffer;
-	size_t m_BufferSize;
-	size_t m_BufferPos;
+	IStream* m_parentStream;
+	EVP_CIPHER_CTX m_cipherCtx;
+	std::vector<uint8_t> m_buffer;
+	size_t m_bufferSize;
+	size_t m_bufferPos;
 };
 
 CryptoIStream::CryptoIStream()
-	: m_Impl(nullptr)
+	: m_impl(nullptr)
 {
 }
 
 CryptoIStream::~CryptoIStream()
 {
-	Close();
+	close();
 }
 
-bool CryptoIStream::Open(IStream& parentStream, const std::vector<uint8_t>& key,
+bool CryptoIStream::open(IStream& parentStream, const std::vector<uint8_t>& key,
 	const std::vector<uint8_t>& iv)
 {
-	Close();
+	close();
 
-	m_Impl = new Impl;
-	if (!m_Impl->Open(parentStream, key, iv))
+	m_impl = new Impl;
+	if (!m_impl->open(parentStream, key, iv))
 	{
-		Close();
+		close();
 		return false;
 	}
 
 	return true;
 }
 
-size_t CryptoIStream::Read(void* data, size_t size)
+size_t CryptoIStream::read(void* data, size_t size)
 {
-	if (!m_Impl)
+	if (!m_impl)
 		return 0;
-	return m_Impl->Read(data, size);
+	return m_impl->read(data, size);
 }
 
-void CryptoIStream::Close()
+void CryptoIStream::close()
 {
-	delete m_Impl;
-	m_Impl = nullptr;
+	delete m_impl;
+	m_impl = nullptr;
 }
 
 } // namespace NoteVault

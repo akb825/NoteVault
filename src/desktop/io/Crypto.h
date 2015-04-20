@@ -32,10 +32,10 @@ public:
 	static const unsigned int cSaltLenBytes = cSaltLen/8;
 	static const unsigned int cDefaultKeyIterations = 100000;
 
-	static void Initialize();
-	static std::vector<uint8_t> GenerateKey(const std::string& password,
+	static void initialize();
+	static std::vector<uint8_t> generateKey(const std::string& password,
 		const std::vector<uint8_t>& salt, unsigned int numIterations);
-	static std::vector<uint8_t> Random(unsigned int numBytes);
+	static std::vector<uint8_t> random(unsigned int numBytes);
 };
 
 } // namespace NoteVault

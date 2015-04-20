@@ -27,14 +27,14 @@ public:
 	CryptoIStream();
 	~CryptoIStream();
 
-	bool Open(IStream& parentStream, const std::vector<uint8_t>& key,
+	bool open(IStream& parentStream, const std::vector<uint8_t>& key,
 		const std::vector<uint8_t>& iv);
-	size_t Read(void* data, size_t size) override;
-	void Close() override;
+	size_t read(void* data, size_t size) override;
+	void close() override;
 
 private:
 	class Impl;
-	Impl* m_Impl;
+	Impl* m_impl;
 };
 
 } // namespace NoteVault

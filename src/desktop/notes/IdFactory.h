@@ -25,15 +25,15 @@ class IdFactory
 public:
 	IdFactory();
 
-	bool AddId(uint64_t id);
-	uint64_t NewId();
-	bool RemoveId(uint64_t id);
+	bool addId(uint64_t id);
+	uint64_t newId();
+	bool removeId(uint64_t id);
 
-	void Clear();
+	void clear();
 
 private:
-	std::unordered_set<uint64_t> m_Ids;
-	uint64_t m_MaxId;
+	std::unordered_set<uint64_t> m_ids;
+	uint64_t m_maxId;
 };
 
 } // namespace NoteVault

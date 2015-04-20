@@ -42,7 +42,7 @@ public:
 			{
 				if (encryptSize > static_cast<int>(m_Buffer.size()))
 					throw std::overflow_error("Buffer overflow!");
-				size_t writeSize = m_ParentStream->Write(m_Buffer.data(), encryptSize);
+				size_t writeSize = m_ParentStream->write(m_Buffer.data(), encryptSize);
 				(void)writeSize;
 				assert(static_cast<int>(writeSize) == encryptSize);
 			}
@@ -52,7 +52,7 @@ public:
 		EVP_CIPHER_CTX_cleanup(&m_CipherCtx);
 	}
 
-	bool Open(OStream& parentStream, const std::vector<uint8_t>& key,
+	bool open(OStream& parentStream, const std::vector<uint8_t>& key,
 		const std::vector<uint8_t>& iv)
 	{
 		EVP_CIPHER_CTX_init(&m_CipherCtx);
@@ -77,7 +77,7 @@ public:
 		return true;
 	}
 
-	size_t Write(const void* data, size_t size)
+	size_t write(const void* data, size_t size)
 	{
 		assert(m_ParentStream);
 		const uint8_t* dataBytes = reinterpret_cast<const uint8_t*>(data);
@@ -95,7 +95,7 @@ public:
 
 			if (encryptLen > static_cast<int>(m_Buffer.size()))
 				throw std::overflow_error("Buffer overflow!");
-			size_t streamWriteSize = m_ParentStream->Write(m_Buffer.data(), encryptLen);
+			size_t streamWriteSize = m_ParentStream->write(m_Buffer.data(), encryptLen);
 			if (static_cast<int>(streamWriteSize) != encryptLen)
 				return writeSize;
 
@@ -114,41 +114,41 @@ private:
 };
 
 CryptoOStream::CryptoOStream()
-	: m_Impl(nullptr)
+	: m_impl(nullptr)
 {
 }
 
 CryptoOStream::~CryptoOStream()
 {
-	Close();
+	close();
 }
 
-bool CryptoOStream::Open(OStream& parentStream, const std::vector<uint8_t>& key,
+bool CryptoOStream::open(OStream& parentStream, const std::vector<uint8_t>& key,
 	const std::vector<uint8_t>& iv)
 {
-	Close();
+	close();
 
-	m_Impl = new Impl;
-	if (!m_Impl->Open(parentStream, key, iv))
+	m_impl = new Impl;
+	if (!m_impl->open(parentStream, key, iv))
 	{
-		Close();
+		close();
 		return false;
 	}
 
 	return true;
 }
 
-size_t CryptoOStream::Write(const void* data, size_t size)
+size_t CryptoOStream::write(const void* data, size_t size)
 {
-	if (!m_Impl)
+	if (!m_impl)
 		return 0;
-	return m_Impl->Write(data, size);
+	return m_impl->write(data, size);
 }
 
-void CryptoOStream::Close()
+void CryptoOStream::close()
 {
-	delete m_Impl;
-	m_Impl = nullptr;
+	delete m_impl;
+	m_impl = nullptr;
 }
 
 } // namespace NoteVault

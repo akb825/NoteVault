@@ -18,7 +18,7 @@
 #include "Crypto.h"
 #include "CryptoIStream.h"
 #include "CryptoOStream.h"
-#include "../notes/NoteSet.h"
+#include "notes/NoteSet.h"
 #include <cstring>
 
 #if defined(__BIG_ENDIAN__)
@@ -42,7 +42,7 @@ namespace NoteVault
 static const char cMagicString[] = "NoteVault";
 
 #if DO_SWAP
-static uint64_t Swap(uint64_t val)
+static uint64_t swap(uint64_t val)
 {
 	return
 		((val >> 56) & 0x00000000000000FFULL) |
@@ -55,7 +55,7 @@ static uint64_t Swap(uint64_t val)
 		((val << 56) & 0xFF00000000000000ULL);
 }
 
-static uint32_t Swap(uint32_t val)
+static uint32_t swap(uint32_t val)
 {
 	return
 		((val >> 24) & 0x000000FF) |
@@ -65,130 +65,130 @@ static uint32_t Swap(uint32_t val)
 }
 #endif
 
-static bool Read(uint64_t& val, IStream& stream)
+static bool read(uint64_t& val, IStream& stream)
 {
-	if (stream.Read(&val, sizeof(val)) != sizeof(val))
+	if (stream.read(&val, sizeof(val)) != sizeof(val))
 		return false;
 #if DO_SWAP
-	val = Swap(val);
+	val = swap(val);
 #endif
 	return true;
 }
 
-static bool Read(uint32_t& val, IStream& stream)
+static bool read(uint32_t& val, IStream& stream)
 {
-	if (stream.Read(&val, sizeof(val)) != sizeof(val))
+	if (stream.read(&val, sizeof(val)) != sizeof(val))
 		return false;
 #if DO_SWAP
-	val = Swap(val);
+	val = swap(val);
 #endif
 	return true;
 }
 
-static bool Read(std::string& val, IStream& stream)
+static bool read(std::string& val, IStream& stream)
 {
 	uint32_t length;
-	if (!Read(length, stream))
+	if (!read(length, stream))
 		return false;
 
 	val.resize(length);
-	return stream.Read(&val[0], val.size()) == val.size();
+	return stream.read(&val[0], val.size()) == val.size();
 }
 
-static bool Write(uint64_t val, OStream& stream)
+static bool write(uint64_t val, OStream& stream)
 {
 #if DO_SWAP
-	val = Swap(val);
+	val = swap(val);
 #endif
-	return stream.Write(&val, sizeof(val)) == sizeof(val);
+	return stream.write(&val, sizeof(val)) == sizeof(val);
 }
 
-static bool Write(uint32_t val, OStream& stream)
+static bool write(uint32_t val, OStream& stream)
 {
 #if DO_SWAP
-	val = Swap(val);
+	val = swap(val);
 #endif
-	return stream.Write(&val, sizeof(val)) == sizeof(val);
+	return stream.write(&val, sizeof(val)) == sizeof(val);
 }
 
-static bool Write(const std::string& val, OStream& stream)
+static bool write(const std::string& val, OStream& stream)
 {
-	if (!Write(static_cast<uint32_t>(val.size()), stream))
+	if (!write(static_cast<uint32_t>(val.size()), stream))
 		return false;
 
-	return stream.Write(&val[0], val.size()) == val.size();
+	return stream.write(&val[0], val.size()) == val.size();
 }
 
-NoteFile::Result NoteFile::LoadNotes(NoteSet& notes, IStream& stream, const std::string& password,
+NoteFile::Result NoteFile::loadNotes(NoteSet& notes, IStream& stream, const std::string& password,
 	std::vector<uint8_t>& salt, std::vector<uint8_t>& key)
 {
 	notes.clear();
 
 	//Read the header: magic string, version, salt, and initialization vector.
 	char magicStringCheck[sizeof(cMagicString)];
-	if (stream.Read(magicStringCheck, sizeof(magicStringCheck)) != sizeof(magicStringCheck) ||
+	if (stream.read(magicStringCheck, sizeof(magicStringCheck)) != sizeof(magicStringCheck) ||
 		strncmp(magicStringCheck, cMagicString, sizeof(cMagicString) != 0))
 	{
 		return Result::InvalidFile;
 	}
 
 	uint32_t version;
-	if (!Read(version, stream))
+	if (!read(version, stream))
 		return Result::IoError;
 	if (version > cFileVersion)
 		return Result::InvalidVersion;
 
 	uint32_t saltLen;
-	if (!Read(saltLen, stream))
+	if (!read(saltLen, stream))
 		return Result::IoError;
 	salt.resize(saltLen);
-	if (stream.Read(salt.data(), saltLen) != saltLen)
+	if (stream.read(salt.data(), saltLen) != saltLen)
 		return Result::IoError;
 
 	unsigned int numIterations = Crypto::cDefaultKeyIterations;
 	//If an older file version, set the number of iterations based on that version.
-	key = Crypto::GenerateKey(password, salt, numIterations);
+	key = Crypto::generateKey(password, salt, numIterations);
 	if (key.empty())
 		return Result::EncryptionError;
 
 	uint32_t ivLen;
-	if (!Read(ivLen, stream))
+	if (!read(ivLen, stream))
 		return Result::IoError;
 	std::vector<uint8_t> iv;
 	iv.resize(ivLen);
-	if (stream.Read(iv.data(), ivLen) != ivLen)
+	if (stream.read(iv.data(), ivLen) != ivLen)
 		return Result::IoError;
 
 	//Main file. (encrypted)
 	CryptoIStream cryptoStream;
-	if (!cryptoStream.Open(stream, key, iv))
+	if (!cryptoStream.open(stream, key, iv))
 		return Result::EncryptionError;
 
 	//Read the magic string again to verify the correct key
 	memset(magicStringCheck, 0, sizeof(magicStringCheck));
-	if (cryptoStream.Read(magicStringCheck, sizeof(magicStringCheck)) != sizeof(magicStringCheck))
+	if (cryptoStream.read(magicStringCheck, sizeof(magicStringCheck)) != sizeof(magicStringCheck))
 		return Result::IoError;
 	if (strncmp(magicStringCheck, cMagicString, sizeof(cMagicString) != 0))
 		return Result::EncryptionError;
 
 	//Read the notes
 	uint32_t numNotes;
-	if (!Read(numNotes, cryptoStream))
+	if (!read(numNotes, cryptoStream))
 		return Result::IoError;
 
 	std::string title, message;
 	for (uint32_t i = 0; i < numNotes; ++i)
 	{
 		uint64_t id;
-		if (!Read(id, cryptoStream))
+		if (!read(id, cryptoStream))
 			return Result::IoError;
 
-		if (!Read(title, cryptoStream) || !Read(message, cryptoStream))
+		if (!read(title, cryptoStream) || !read(message, cryptoStream))
 			return Result::IoError;
 
 		Note note(id);
-		note.SetTitle(title);
-		note.SetMessage(message);
+		note.setTitle(title);
+		note.setMessage(message);
 		NoteSet::iterator insertIter = notes.insert(notes.end(), note);
 		if (insertIter == notes.end())
 			return Result::IoError;
@@ -197,55 +197,55 @@ NoteFile::Result NoteFile::LoadNotes(NoteSet& notes, IStream& stream, const std:
 	//If reading from an old file, re-calculate the key with the updated number of iterations.
 	if (numIterations != Crypto::cDefaultKeyIterations)
 	{
-		key = Crypto::GenerateKey(password, salt, Crypto::cDefaultKeyIterations);
+		key = Crypto::generateKey(password, salt, Crypto::cDefaultKeyIterations);
 		if (key.empty())
 			return Result::EncryptionError;
 	}
 	return Result::Success;
 }
 
-NoteFile::Result NoteFile::SaveNotes(const NoteSet& notes, OStream& stream,
+NoteFile::Result NoteFile::saveNotes(const NoteSet& notes, OStream& stream,
 	const std::vector<uint8_t>& salt, const std::vector<uint8_t>& key)
 {
 	//Read the header: magic string, version, salt, and initialization vector.
-	if (stream.Write(cMagicString, sizeof(cMagicString)) != sizeof(cMagicString))
+	if (stream.write(cMagicString, sizeof(cMagicString)) != sizeof(cMagicString))
 		return Result::IoError;
 
-	if (!Write(cFileVersion, stream))
+	if (!write(cFileVersion, stream))
 		return Result::IoError;
 
-	if (!Write(static_cast<uint32_t>(salt.size()), stream))
+	if (!write(static_cast<uint32_t>(salt.size()), stream))
 		return Result::IoError;
-	if (stream.Write(salt.data(), salt.size()) != salt.size())
+	if (stream.write(salt.data(), salt.size()) != salt.size())
 		return Result::IoError;
 
 	//Generate a new initialization vector
-	std::vector<uint8_t> iv = Crypto::Random(Crypto::cBlockLenBytes);
-	if (!Write(static_cast<uint32_t>(iv.size()), stream))
+	std::vector<uint8_t> iv = Crypto::random(Crypto::cBlockLenBytes);
+	if (!write(static_cast<uint32_t>(iv.size()), stream))
 		return Result::IoError;
-	if (stream.Write(iv.data(), iv.size()) != iv.size())
+	if (stream.write(iv.data(), iv.size()) != iv.size())
 		return Result::IoError;
 
 	//Main file. (encrypted)
 	CryptoOStream cryptoStream;
-	if (!cryptoStream.Open(stream, key, iv))
+	if (!cryptoStream.open(stream, key, iv))
 		return Result::EncryptionError;
 
-	//Write the magic string again for verifying the correct key
-	if (cryptoStream.Write(cMagicString, sizeof(cMagicString)) != sizeof(cMagicString))
+	//write the magic string again for verifying the correct key
+	if (cryptoStream.write(cMagicString, sizeof(cMagicString)) != sizeof(cMagicString))
 		return Result::IoError;
 
-	//Write the notes
+	//write the notes
 	uint32_t numNotes = static_cast<int32_t>(notes.size());
-	if (!Write(numNotes, cryptoStream))
+	if (!write(numNotes, cryptoStream))
 		return Result::IoError;
 
 	for (const Note& note : notes)
 	{
-		if (!Write(note.GetId(), cryptoStream))
+		if (!write(note.getId(), cryptoStream))
 			return Result::IoError;
 
-		if (!Write(note.GetTitle(), cryptoStream) || !Write(note.GetMessage(), cryptoStream))
+		if (!write(note.getTitle(), cryptoStream) || !write(note.getMessage(), cryptoStream))
 			return Result::IoError;
 	}
 

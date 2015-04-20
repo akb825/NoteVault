@@ -28,13 +28,13 @@ public:
 
 	Note& operator=(const Note& other);
 
-	uint64_t GetId() const	{return m_Id;}
+	uint64_t getId() const	{return m_Id;}
 
-	const std::string& GetTitle() const	{return m_Title;}
-	void SetTitle(const std::string& title)	{m_Title = title;}
+	const std::string& getTitle() const	{return m_Title;}
+	void setTitle(const std::string& title)	{m_Title = title;}
 
-	const std::string& GetMessage() const	{return m_Message;}
-	void SetMessage(const std::string& message)	{m_Message = message;}
+	const std::string& getMessage() const	{return m_Message;}
+	void setMessage(const std::string& message)	{m_Message = message;}
 
 private:
 	uint64_t m_Id;

@@ -21,42 +21,42 @@ namespace NoteVault
 {
 
 FileOStream::FileOStream()
-	: m_File(nullptr)
+	: m_file(nullptr)
 {
 }
 
 FileOStream::~FileOStream()
 {
-	Close();
+	close();
 }
 
-bool FileOStream::Open(const std::string& fileName)
+bool FileOStream::open(const std::string& fileName)
 {
-	Close();
+	close();
 
 	FILE* file = fopen(fileName.c_str(), "wb");
 	if (!file)
 		return false;
-	m_File = file;
+	m_file = file;
 	return true;
 }
 
-size_t FileOStream::Write(const void* data, size_t size)
+size_t FileOStream::write(const void* data, size_t size)
 {
-	if (!m_File)
+	if (!m_file)
 		return 0;
 
-	FILE* file = reinterpret_cast<FILE*>(m_File);
+	FILE* file = reinterpret_cast<FILE*>(m_file);
 	return fwrite(data, 1, size, file);
 }
 
-void FileOStream::Close()
+void FileOStream::close()
 {
-	if (!m_File)
+	if (!m_file)
 		return;
 
-	fclose(reinterpret_cast<FILE*>(m_File));
-	m_File = nullptr;
+	fclose(reinterpret_cast<FILE*>(m_file));
+	m_file = nullptr;
 }
 
-}
+} // namespace NoteVault

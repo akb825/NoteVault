@@ -28,17 +28,19 @@ set(SRC_LIST
 	notes/NoteSet.h
 	ui/MainWindow.cpp
 	ui/MainWindow.h
+	ui/MainWindow.ui
 	)
 
-set(wxWidgets_CONFIGURATION mswu)
-find_package(wxWidgets COMPONENTS core base richtext adv REQUIRED)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOMOC ON)
+
+find_package(Qt5Widgets REQUIRED)
 find_package(OpenSSL REQUIRED)
-include(${wxWidgets_USE_FILE})
 
-include_directories(${wxWidgets_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
+qt5_wrap_ui(UI_HEADERS ui/MainWindow.ui)
 
-add_executable(${PROJECT_NAME} ${SRC_LIST})
-target_link_libraries(${PROJECT_NAME} ${wxWidgets_LIBRARIES} ${OPENSSL_LIBRARIES})
+add_executable(${PROJECT_NAME} ${SRC_LIST} ${UI_HEADERS})
+target_link_libraries(${PROJECT_NAME} Qt5::Widgets ${OPENSSL_LIBRARIES})
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/linux/icons/

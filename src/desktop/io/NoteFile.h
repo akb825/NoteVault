@@ -39,9 +39,9 @@ public:
 		EncryptionError
 	};
 
-	static Result LoadNotes(NoteSet& notes, IStream& stream, const std::string& password,
+	static Result loadNotes(NoteSet& notes, IStream& stream, const std::string& password,
 		std::vector<uint8_t>& salt, std::vector<uint8_t>& key);
-	static Result SaveNotes(const NoteSet& notes, OStream& stream,
+	static Result saveNotes(const NoteSet& notes, OStream& stream,
 		const std::vector<uint8_t>& salt, const std::vector<uint8_t>& key);
 };
 

@@ -26,11 +26,11 @@ public:
 	FileOStream();
 	~FileOStream();
 
-	bool Open(const std::string& fileName);
-	size_t Write(const void* data, size_t size) override;
-	void Close() override;
+	bool open(const std::string& fileName);
+	size_t write(const void* data, size_t size) override;
+	void close() override;
 private:
-	void* m_File;
+	void* m_file;
 };
 
-}
+} // namespace NoteVault

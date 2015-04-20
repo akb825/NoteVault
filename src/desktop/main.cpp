@@ -14,40 +14,15 @@
  * limitations under the License.
  */
 
-#include "ui/MainWindow.h"
 #include "io/Crypto.h"
-#include <wx/app.h>
+#include "ui/MainWindow.h"
+#include <QtWidgets/QApplication>
 
-namespace
+int main(int argc, char** argv)
 {
-
-class App : public wxApp
-{
-public:
-	App()
-		: m_Window(nullptr) {}
-
-	virtual ~App()
-	{
-	}
-
-	bool OnInit() override
-	{
-		NoteVault::Crypto::Initialize();
-
-		std::string initialFile;
-		if (argc > 1)
-			initialFile = argv[1].ToUTF8();
-
-		m_Window = new NoteVault::MainWindow("Note Vault", wxSize(800, 600), initialFile);
-		m_Window->Show(true);
-		return true;
-	}
-
-private:
-	NoteVault::MainWindow* m_Window;
-};
-
-} // namespace
-
-wxIMPLEMENT_APP(App);
+	NoteVault::Crypto::initialize();
+	QApplication app(argc, argv);
+	NoteVault::MainWindow mainWindow;
+	mainWindow.show();
+	return app.exec();
+}

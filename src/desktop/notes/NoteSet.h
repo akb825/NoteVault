@@ -34,7 +34,7 @@ public:
 	iterator insert(const iterator& pos, const Note& note);
 
 	int erase(uint64_t id);
-	int erase(const Note& note)	{return erase(note.GetId());}
+	int erase(const Note& note)	{return erase(note.getId());}
 	iterator erase(const iterator& iter);
 
 	iterator find(uint64_t id);
@@ -43,7 +43,7 @@ public:
 	Note* find_note(uint64_t id);
 	const Note* find_note(uint64_t id) const;
 
-	size_t size() const	{return m_Notes.size();}
+	size_t size() const	{return m_notes.size();}
 	void clear();
 
 	Note& operator[](size_t index);
@@ -62,9 +62,9 @@ private:
 	using NoteMap = std::unordered_map<uint64_t, Note>;
 	using OrderList = std::vector<uint64_t>;
 
-	NoteMap m_Notes;
-	OrderList m_Order;
-	IdFactory m_Ids;
+	NoteMap m_notes;
+	OrderList m_order;
+	IdFactory m_ids;
 };
 
 class NoteSet::iterator : public std::iterator<std::random_access_iterator_tag, Note>
@@ -152,9 +152,9 @@ private:
 template <typename Pred>
 void NoteSet::sort(const Pred& pred)
 {
-	std::sort(m_Order.begin(), m_Order.end(), [this, &pred] (size_t left, size_t right) -> bool
+	std::sort(m_order.begin(), m_order.end(), [this, &pred] (size_t left, size_t right) -> bool
 		{
-			return pred(m_Notes.find(left)->second, m_Notes.find(right)->second);
+			return pred(m_notes.find(left)->second, m_notes.find(right)->second);
 		});
 }
 
@@ -277,10 +277,10 @@ inline NoteSet::iterator::iterator(NoteSet& notes, OrderList::iterator iter)
 
 inline void NoteSet::iterator::UpdateCurNote()
 {
-	if (m_Iter == m_Notes->m_Order.end())
+	if (m_Iter == m_Notes->m_order.end())
 		m_CurNote = nullptr;
 	else
-		m_CurNote = &m_Notes->m_Notes.find(*m_Iter)->second;
+		m_CurNote = &m_Notes->m_notes.find(*m_Iter)->second;
 }
 
 inline NoteSet::const_iterator::const_iterator()
@@ -409,10 +409,10 @@ inline NoteSet::const_iterator::const_iterator(const NoteSet& notes, OrderList::
 
 inline void NoteSet::const_iterator::UpdateCurNote()
 {
-	if (m_Iter == m_Notes->m_Order.end())
+	if (m_Iter == m_Notes->m_order.end())
 		m_CurNote = nullptr;
 	else
-		m_CurNote = &m_Notes->m_Notes.find(*m_Iter)->second;
+		m_CurNote = &m_Notes->m_notes.find(*m_Iter)->second;
 }
 
 } // namespace NoteVault

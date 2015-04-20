@@ -20,33 +20,33 @@ namespace NoteVault
 {
 
 IdFactory::IdFactory()
-	: m_MaxId(0)
+	: m_maxId(0)
 {
 }
 
-bool IdFactory::AddId(uint64_t id)
+bool IdFactory::addId(uint64_t id)
 {
-	if (!m_Ids.insert(id).second)
+	if (!m_ids.insert(id).second)
 		return false;
-	m_MaxId = std::max(m_MaxId, id + 1);
+	m_maxId = std::max(m_maxId, id + 1);
 	return true;
 }
 
-uint64_t IdFactory::NewId()
+uint64_t IdFactory::newId()
 {
-	uint64_t newId = m_MaxId++;
-	m_Ids.insert(newId);
+	uint64_t newId = m_maxId++;
+	m_ids.insert(newId);
 	return newId;
 }
 
-bool IdFactory::RemoveId(uint64_t id)
+bool IdFactory::removeId(uint64_t id)
 {
-	return m_Ids.erase(id) > 0;
+	return m_ids.erase(id) > 0;
 }
 
-void IdFactory::Clear()
+void IdFactory::clear()
 {
-	m_Ids.clear();
+	m_ids.clear();
 }
 
 } // namespace NoteVault

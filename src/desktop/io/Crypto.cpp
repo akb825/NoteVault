@@ -23,7 +23,7 @@
 namespace NoteVault
 {
 
-void Crypto::Initialize()
+void Crypto::initialize()
 {
 	OpenSSL_add_all_algorithms();
 	ERR_load_crypto_strings();
@@ -31,7 +31,7 @@ void Crypto::Initialize()
 	RAND_set_rand_engine(nullptr);
 }
 
-std::vector<uint8_t> Crypto::GenerateKey(const std::string& password,
+std::vector<uint8_t> Crypto::generateKey(const std::string& password,
 	const std::vector<uint8_t>& salt, unsigned int numIterations)
 {
 	std::vector<uint8_t> key;
@@ -44,7 +44,7 @@ std::vector<uint8_t> Crypto::GenerateKey(const std::string& password,
 	return key;
 }
 
-std::vector<uint8_t> Crypto::Random(unsigned int numBytes)
+std::vector<uint8_t> Crypto::random(unsigned int numBytes)
 {
 	std::vector<uint8_t> randBytes;
 	randBytes.resize(numBytes);
