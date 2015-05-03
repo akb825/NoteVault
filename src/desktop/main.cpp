@@ -23,6 +23,9 @@ int main(int argc, char** argv)
 	NoteVault::Crypto::initialize();
 	QApplication app(argc, argv);
 	NoteVault::MainWindow mainWindow;
+
 	mainWindow.show();
+	if (argc > 1)
+		mainWindow.open(argv[1]);
 	return app.exec();
 }
