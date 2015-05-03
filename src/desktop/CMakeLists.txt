@@ -64,5 +64,5 @@ target_link_libraries(${PROJECT_NAME} Qt5::Widgets ${OPENSSL_LIBRARIES})
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/linux/icons/
 	DESTINATION share/icons/hicolor)
-install(FILES NoteVault.desktop DESTINATION share/applications)
+install(FILES notevault.desktop DESTINATION share/applications)
 install(FILES secure-note.xml DESTINATION share/mime/packages)
