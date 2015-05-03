@@ -15,26 +15,94 @@
  */
 
 #include <QtWidgets/QMainWindow>
+#include <memory>
 
 namespace Ui
 {
 	class MainWindow;
 }
 
+class QListWidgetItem;
+class QUndoStack;
+
 namespace NoteVault
 {
 
+class Note;
+
 class MainWindow : public QMainWindow
 {
+	Q_OBJECT
 public:
 	MainWindow();
 	~MainWindow();
+
+	bool open(const std::string& fileName);
+
+private Q_SLOTS:
+	void onNew();
+	void onOpen();
+	void onSave();
+	void onSaveAs();
+	void onUndo();
+	void onRedo();
+	void onCut();
+	void onCopy();
+	void onPaste();
+	void onDelete();
+	void onSelectAll();
+	void onAddNote();
+	void onRemoveNote();
+	void onAbout();
+
+	void onNoteRenamed(QListWidgetItem* item);
+	void onNoteSelectionChanged();
+
+	void onNoteTextChanged();
+
+	void updateMenuItems();
 
 private:
 	MainWindow(const MainWindow&) = delete;
 	MainWindow& operator=(const MainWindow&) = delete;
 
-	Ui::MainWindow* m_impl;
+	void closeEvent(QCloseEvent* event) override;
+
+	bool canClose();
+	void clear();
+	void updateUi();
+	void updateTitle();
+	void markDirty();
+	void sortNotes();
+	void updateForSelection(ptrdiff_t item);
+	void updateForDeselection();
+	void updateCommands(const Note& note);
+
+	QObject* getCurrentUndoStack();
+	QObject* getCurrentTextEdit();
+
+	bool hasSelection() const;
+	bool hasText() const;
+	bool canUndo() const;
+	bool canRedo() const;
+	QString getUndoText() const;
+	QString getRedoText() const;
+
+	bool save();
+	bool saveAs();
+
+	struct ChildItems;
+	struct NoteContext;
+	class NoteCommand;
+	class AddCommand;
+	class RemoveCommand;
+	class RenameCommand;
+
+	std::unique_ptr<Ui::MainWindow> m_impl;
+	std::unique_ptr<ChildItems> m_children;
+	std::unique_ptr<NoteContext> m_notes;
+
+	bool m_ignoreSelectionChanges;
 };
 
 } // namespace NoteVault
