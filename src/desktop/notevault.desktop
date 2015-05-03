@@ -6,5 +6,5 @@ Comment=Save notes securely
 Exec=notevault %f
 Icon=NoteVault
 Terminal=false
-Categories=Utilities
+Categories=Utility
 MimeType=application/x-secure-note
