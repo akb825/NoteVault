@@ -21,9 +21,17 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
+
+import java.util.Comparator;
 
 
-public class NoteListSelection extends AppCompatActivity
+public class NoteListSelection extends AppCompatActivity implements AdapterView.OnItemSelectedListener
 {
 
 	@Override
@@ -32,6 +40,15 @@ public class NoteListSelection extends AppCompatActivity
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_note_list_selection);
 		setTitle(R.string.title_note_lists);
+
+		m_noteListsAdapter = new ArrayAdapter(getApplicationContext(), R.layout.list_item);
+		m_noteListsView = (ListView)getWindow().getDecorView().findViewById(R.id.noteLists);
+		m_noteListsView.setOnItemSelectedListener(this);
+		m_noteListsView.setAdapter(m_noteListsAdapter);
+		populateNoteLists();
+
+		m_openButton = (Button)getWindow().getDecorView().findViewById(R.id.openNoteListButton);
+		m_removeButton = (Button)getWindow().getDecorView().findViewById(R.id.removeNoteListButton);
 	}
 
 	@Override
@@ -60,4 +77,64 @@ public class NoteListSelection extends AppCompatActivity
 
 		return super.onOptionsItemSelected(item);
 	}
+
+	public void addNoteList(View view)
+	{
+		m_noteListsAdapter.add("New Note");
+		int selectedIndex = m_noteListsAdapter.getCount() - 1;
+		m_noteListsView.setSelection(selectedIndex);
+		m_selectedNoteList = (TextView)m_noteListsAdapter.getView(selectedIndex, null,
+			m_noteListsView).findViewById(R.id.itemText);
+		System.out.printf("%d: %b\n", selectedIndex, m_selectedNoteList != null);
+		sortNoteLists();
+		m_selectedNoteList.beginBatchEdit();
+	}
+
+	public void removeNoteList(View view)
+	{
+	}
+
+	public void openNoteList(View view)
+	{
+	}
+
+	@Override
+	public void onItemSelected(AdapterView<?> parent, View view, int position, long id)
+	{
+		System.out.printf("here\n");
+		m_selectedNoteList = (TextView)view.findViewById(R.id.itemText);
+		m_removeButton.setEnabled(true);
+		m_openButton.setEnabled(true);
+	}
+
+	@Override
+	public void onNothingSelected(AdapterView<?> parent)
+	{
+		m_selectedNoteList = null;
+		m_removeButton.setEnabled(false);
+		m_openButton.setEnabled(false);
+	}
+
+	private void populateNoteLists()
+	{
+	}
+
+	private void sortNoteLists()
+	{
+		m_noteListsAdapter.sort(new StringCompare());
+	}
+
+	private class StringCompare implements Comparator<String>
+	{
+		public int compare(String left, String right)
+		{
+			return left.compareToIgnoreCase(right);
+		}
+	}
+
+	private ListView m_noteListsView;
+	private Button m_openButton;
+	private Button m_removeButton;
+	private TextView m_selectedNoteList;
+	private ArrayAdapter<String> m_noteListsAdapter;
 }
