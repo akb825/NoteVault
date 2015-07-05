@@ -6,9 +6,17 @@
 	<string name="button_remove">Remove</string>
 	<string name="button_open">Open</string>
 	<string name="button_close">Close</string>
+	<string name="button_rename">Rename</string>
+	<string name="button_cancel">Cancel</string>
 
 	<string name="title_note_lists">Note Lists</string>
 	<string name="title_help_screen">About Note Vault</string>
+	<string name="title_rename">New name</string>
+
+	<string name="message_confirm_remove">Do you wish to remove %s?</string>
+
+	<string name="menu_item_rename">Rename</string>
+	<string name="menu_item_remove">Remove</string>
 
 	<string name="help_text">
 		Securely store notes without relying on an online service.

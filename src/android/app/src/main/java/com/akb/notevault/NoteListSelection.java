@@ -16,22 +16,28 @@
 
 package com.akb.notevault;
 
+import android.content.Context;
 import android.content.Intent;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.akb.notevault.dialogs.OnDialogAcceptedListener;
+import com.akb.notevault.dialogs.RemoveDialog;
+import com.akb.notevault.dialogs.RenameDialog;
 
 import java.util.Comparator;
 
 
-public class NoteListSelection extends AppCompatActivity implements AdapterView.OnItemSelectedListener
+public class NoteListSelection extends AppCompatActivity
 {
 
 	@Override
@@ -41,14 +47,11 @@ public class NoteListSelection extends AppCompatActivity implements AdapterView.
 		setContentView(R.layout.activity_note_list_selection);
 		setTitle(R.string.title_note_lists);
 
-		m_noteListsAdapter = new ArrayAdapter(getApplicationContext(), R.layout.list_item);
+		m_noteListsAdapter = new CustomAdapter(getApplicationContext(), R.layout.list_item,
+			R.id.itemText);
 		m_noteListsView = (ListView)getWindow().getDecorView().findViewById(R.id.noteLists);
-		m_noteListsView.setOnItemSelectedListener(this);
 		m_noteListsView.setAdapter(m_noteListsAdapter);
 		populateNoteLists();
-
-		m_openButton = (Button)getWindow().getDecorView().findViewById(R.id.openNoteListButton);
-		m_removeButton = (Button)getWindow().getDecorView().findViewById(R.id.removeNoteListButton);
 	}
 
 	@Override
@@ -78,41 +81,18 @@ public class NoteListSelection extends AppCompatActivity implements AdapterView.
 		return super.onOptionsItemSelected(item);
 	}
 
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo)
+	{
+		TextView textView = (TextView)v;
+		menu.add(R.string.menu_item_rename).setOnMenuItemClickListener(new RenameListener(textView));
+		menu.add(R.string.menu_item_remove).setOnMenuItemClickListener(new RemoveListener(textView));
+	}
+
 	public void addNoteList(View view)
 	{
-		m_noteListsAdapter.add("New Note");
-		int selectedIndex = m_noteListsAdapter.getCount() - 1;
-		m_noteListsView.setSelection(selectedIndex);
-		m_selectedNoteList = (TextView)m_noteListsAdapter.getView(selectedIndex, null,
-			m_noteListsView).findViewById(R.id.itemText);
-		System.out.printf("%d: %b\n", selectedIndex, m_selectedNoteList != null);
+		m_noteListsAdapter.add(new ListItem("New Note"));
 		sortNoteLists();
-		m_selectedNoteList.beginBatchEdit();
-	}
-
-	public void removeNoteList(View view)
-	{
-	}
-
-	public void openNoteList(View view)
-	{
-	}
-
-	@Override
-	public void onItemSelected(AdapterView<?> parent, View view, int position, long id)
-	{
-		System.out.printf("here\n");
-		m_selectedNoteList = (TextView)view.findViewById(R.id.itemText);
-		m_removeButton.setEnabled(true);
-		m_openButton.setEnabled(true);
-	}
-
-	@Override
-	public void onNothingSelected(AdapterView<?> parent)
-	{
-		m_selectedNoteList = null;
-		m_removeButton.setEnabled(false);
-		m_openButton.setEnabled(false);
 	}
 
 	private void populateNoteLists()
@@ -121,20 +101,151 @@ public class NoteListSelection extends AppCompatActivity implements AdapterView.
 
 	private void sortNoteLists()
 	{
-		m_noteListsAdapter.sort(new StringCompare());
+		m_noteListsAdapter.sort(new ItemCompare());
 	}
 
-	private class StringCompare implements Comparator<String>
+	private class ListItem
 	{
-		public int compare(String left, String right)
+		public ListItem(String name)
 		{
-			return left.compareToIgnoreCase(right);
+			m_name = name;
+		}
+
+		public String getName()
+		{
+			return m_name;
+		}
+
+		public void setName(String name)
+		{
+			m_name = name;
+		}
+
+		@Override
+		public String toString()
+		{
+			return m_name;
+		}
+
+		private String m_name;
+	}
+
+	private class ItemCompare implements Comparator<ListItem>
+	{
+		public int compare(ListItem left, ListItem right)
+		{
+			return left.getName().compareToIgnoreCase(right.getName());
 		}
 	}
 
+	private class CustomAdapter extends ArrayAdapter<ListItem>
+	{
+		public CustomAdapter(Context context, int resource, int textViewResourceId)
+		{
+			super(context, resource, textViewResourceId);
+			m_textViewResourceId = textViewResourceId;
+		}
+
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent)
+		{
+			View view = super.getView(position, convertView, parent);
+			View textView = view.findViewById(m_textViewResourceId);
+			textView.setTag(getItem(position));
+			textView.setOnClickListener(new OpenNoteListener());
+			registerForContextMenu(textView);
+			return view;
+		}
+
+		private int m_textViewResourceId;
+	}
+
+	private class OpenNoteListener implements View.OnClickListener
+	{
+		@Override
+		public void onClick(View view)
+		{
+			System.out.printf("click\n");
+		}
+	}
+
+	private class RenameListener implements MenuItem.OnMenuItemClickListener
+	{
+		public RenameListener(TextView noteListView)
+		{
+			m_noteListView = noteListView;
+		}
+
+		@Override
+		public boolean onMenuItemClick(MenuItem item)
+		{
+			RenameDialog renameDialog = new RenameDialog();
+			renameDialog.setInitialName(m_noteListView.getText().toString());
+			renameDialog.setOnDialogAcceptedListener(new RenameNoteListener(m_noteListView));
+			renameDialog.show(getSupportFragmentManager(), "rename note list");
+			return true;
+		}
+
+		private TextView m_noteListView;
+	}
+
+	private class RemoveListener implements MenuItem.OnMenuItemClickListener
+	{
+		public RemoveListener(TextView noteListView)
+		{
+			m_noteListView = noteListView;
+		}
+
+		@Override
+		public boolean onMenuItemClick(MenuItem item)
+		{
+			RemoveDialog removeDialog = new RemoveDialog();
+			removeDialog.setName(m_noteListView.getText().toString());
+			removeDialog.setOnDialogAcceptedListener(new RemoveNoteListener(m_noteListView));
+			removeDialog.show(getSupportFragmentManager(), "remove note list");
+			return true;
+		}
+
+		private TextView m_noteListView;
+	}
+
+	private class RenameNoteListener implements OnDialogAcceptedListener
+	{
+		public RenameNoteListener(TextView noteListView)
+		{
+			m_noteListView = noteListView;
+		}
+
+		@Override
+		public void onDialogAccepted(DialogFragment dialog)
+		{
+			String newName = ((RenameDialog)dialog).getNewName();
+			ListItem item = (ListItem)m_noteListView.getTag();
+			item.setName(newName);
+			m_noteListView.setText(newName);
+			sortNoteLists();
+		}
+
+		private TextView m_noteListView;
+	}
+
+	private class RemoveNoteListener implements OnDialogAcceptedListener
+	{
+		public RemoveNoteListener(TextView noteListView)
+		{
+			m_noteListView = noteListView;
+		}
+
+		@Override
+		public void onDialogAccepted(DialogFragment dialog)
+		{
+			m_noteListsAdapter.remove((ListItem) m_noteListView.getTag());
+		}
+
+		private TextView m_noteListView;
+	}
+
+
 	private ListView m_noteListsView;
-	private Button m_openButton;
-	private Button m_removeButton;
-	private TextView m_selectedNoteList;
-	private ArrayAdapter<String> m_noteListsAdapter;
+	private CustomAdapter m_noteListsAdapter;
 }

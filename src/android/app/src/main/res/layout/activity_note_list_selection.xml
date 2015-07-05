@@ -11,24 +11,12 @@
 	<ListView
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:layout_above="@+id/openNoteListButton"
 		android:id="@+id/noteLists"
 		android:layout_alignParentLeft="true"
 		android:layout_alignParentStart="true"
-		android:choiceMode="singleChoice"
 		android:layout_alignParentRight="true"
 		android:layout_alignParentTop="true"
-		/>
-
-	<Button
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:text="@string/button_open"
-		android:id="@+id/openNoteListButton"
-		android:layout_alignParentBottom="true"
-		android:layout_alignParentRight="true"
-		android:enabled="false"
-		android:onClick="openNoteList"/>
+		android:layout_above="@+id/addNoteListButton"/>
 
 	<Button
 		android:layout_width="wrap_content"
@@ -36,18 +24,7 @@
 		android:text="@string/button_add"
 		android:id="@+id/addNoteListButton"
 		android:layout_alignParentBottom="true"
-		android:layout_below="@+id/noteLists"
 		android:layout_alignParentLeft="true"
 		android:onClick="addNoteList"/>
 
-	<Button
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:text="@string/button_remove"
-		android:id="@+id/removeNoteListButton"
-		android:layout_alignParentBottom="true"
-		android:layout_below="@+id/noteLists"
-		android:layout_toRightOf="@+id/addNoteListButton"
-		android:enabled="false"
-		android:onClick="removeNoteList"/>
 </RelativeLayout>
