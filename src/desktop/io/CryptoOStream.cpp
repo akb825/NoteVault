@@ -29,33 +29,33 @@ class CryptoOStream::Impl
 {
 public:
 	Impl()
-		: m_ParentStream(nullptr) {}
+		: m_parentStream(nullptr) {}
 
 	~Impl()
 	{
-		if (m_ParentStream)
+		if (m_parentStream)
 		{
 			//Write the last block to the stream.
-			assert(m_ParentStream);
+			assert(m_parentStream);
 			int encryptSize;
-			if (EVP_EncryptFinal_ex(&m_CipherCtx, m_Buffer.data(), &encryptSize))
+			if (EVP_EncryptFinal_ex(&m_cipherCtx, m_buffer.data(), &encryptSize))
 			{
-				if (encryptSize > static_cast<int>(m_Buffer.size()))
+				if (encryptSize > static_cast<int>(m_buffer.size()))
 					throw std::overflow_error("Buffer overflow!");
-				size_t writeSize = m_ParentStream->write(m_Buffer.data(), encryptSize);
+				size_t writeSize = m_parentStream->write(m_buffer.data(), encryptSize);
 				(void)writeSize;
 				assert(static_cast<int>(writeSize) == encryptSize);
 			}
 			else
 				assert(false);
 		}
-		EVP_CIPHER_CTX_cleanup(&m_CipherCtx);
+		EVP_CIPHER_CTX_cleanup(&m_cipherCtx);
 	}
 
 	bool open(OStream& parentStream, const std::vector<uint8_t>& key,
 		const std::vector<uint8_t>& iv)
 	{
-		EVP_CIPHER_CTX_init(&m_CipherCtx);
+		EVP_CIPHER_CTX_init(&m_cipherCtx);
 
 		const EVP_CIPHER* cipher = EVP_aes_256_cbc();
 		if (EVP_CIPHER_key_length(cipher) != Crypto::cKeyLenBytes)
@@ -67,19 +67,19 @@ public:
 		if (key.size() != Crypto::cKeyLenBytes || iv.size() != Crypto::cBlockLenBytes)
 			return false;
 
-		if (!EVP_EncryptInit_ex(&m_CipherCtx, cipher, nullptr, key.data(), iv.data()))
+		if (!EVP_EncryptInit_ex(&m_cipherCtx, cipher, nullptr, key.data(), iv.data()))
 			return false;
 
-		m_Buffer.resize(Crypto::cBlockLenBytes*2);
-		m_BufferSize = 0;
-		m_BufferPos = 0;
-		m_ParentStream = &parentStream;
+		m_buffer.resize(Crypto::cBlockLenBytes*2);
+		m_bufferSize = 0;
+		m_bufferPos = 0;
+		m_parentStream = &parentStream;
 		return true;
 	}
 
 	size_t write(const void* data, size_t size)
 	{
-		assert(m_ParentStream);
+		assert(m_parentStream);
 		const uint8_t* dataBytes = reinterpret_cast<const uint8_t*>(data);
 
 		size_t writeSize = 0;
@@ -87,15 +87,15 @@ public:
 		{
 			size_t nextSize = std::min(size, writeSize + Crypto::cBlockLenBytes);
 			int encryptLen;
-			if (!EVP_EncryptUpdate(&m_CipherCtx, m_Buffer.data(), &encryptLen,
+			if (!EVP_EncryptUpdate(&m_cipherCtx, m_buffer.data(), &encryptLen,
 				dataBytes + writeSize, nextSize - writeSize))
 			{
 				return writeSize;
 			}
 
-			if (encryptLen > static_cast<int>(m_Buffer.size()))
+			if (encryptLen > static_cast<int>(m_buffer.size()))
 				throw std::overflow_error("Buffer overflow!");
-			size_t streamWriteSize = m_ParentStream->write(m_Buffer.data(), encryptLen);
+			size_t streamWriteSize = m_parentStream->write(m_buffer.data(), encryptLen);
 			if (static_cast<int>(streamWriteSize) != encryptLen)
 				return writeSize;
 
@@ -106,11 +106,11 @@ public:
 	}
 
 private:
-	OStream* m_ParentStream;
-	EVP_CIPHER_CTX m_CipherCtx;
-	std::vector<uint8_t> m_Buffer;
-	size_t m_BufferSize;
-	size_t m_BufferPos;
+	OStream* m_parentStream;
+	EVP_CIPHER_CTX m_cipherCtx;
+	std::vector<uint8_t> m_buffer;
+	size_t m_bufferSize;
+	size_t m_bufferPos;
 };
 
 CryptoOStream::CryptoOStream()

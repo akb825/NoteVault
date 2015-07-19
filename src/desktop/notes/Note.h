@@ -24,22 +24,22 @@ class Note
 {
 public:
 	explicit Note(uint64_t id)
-		: m_Id(id) {}
+		: m_id(id) {}
 
 	Note& operator=(const Note& other);
 
-	uint64_t getId() const	{return m_Id;}
+	uint64_t getId() const	{return m_id;}
 
-	const std::string& getTitle() const	{return m_Title;}
-	void setTitle(const std::string& title)	{m_Title = title;}
+	const std::string& getTitle() const	{return m_title;}
+	void setTitle(const std::string& title)	{m_title = title;}
 
-	const std::string& getMessage() const	{return m_Message;}
-	void setMessage(const std::string& message)	{m_Message = message;}
+	const std::string& getMessage() const	{return m_message;}
+	void setMessage(const std::string& message)	{m_message = message;}
 
 private:
-	uint64_t m_Id;
-	std::string m_Title;
-	std::string m_Message;
+	uint64_t m_id;
+	std::string m_title;
+	std::string m_message;
 };
 
 inline Note& Note::operator=(const Note& other)
@@ -47,8 +47,8 @@ inline Note& Note::operator=(const Note& other)
 	if (this == &other)
 		return *this;
 
-	m_Title = other.m_Title;
-	m_Message = other.m_Message;
+	m_title = other.m_title;
+	m_message = other.m_message;
 	return *this;
 }
 

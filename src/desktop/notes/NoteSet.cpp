@@ -25,7 +25,7 @@ NoteSet::iterator NoteSet::insert(const iterator& pos)
 	uint64_t id = m_ids.newId();
 	Note note(id);
 	m_notes.insert(NoteMap::value_type(id, note));
-	OrderList::iterator orderPos = m_order.insert(pos.m_Iter, id);
+	OrderList::iterator orderPos = m_order.insert(pos.m_iter, id);
 	return iterator(*this, orderPos);
 }
 
@@ -34,7 +34,7 @@ NoteSet::iterator NoteSet::insert(const iterator& pos, const Note& note)
 	if (!m_ids.addId(note.getId()))
 		return end();
 	m_notes.insert(NoteMap::value_type(note.getId(), note));
-	OrderList::iterator orderPos = m_order.insert(pos.m_Iter, note.getId());
+	OrderList::iterator orderPos = m_order.insert(pos.m_iter, note.getId());
 	return iterator(*this, orderPos);
 }
 
@@ -51,7 +51,7 @@ NoteSet::iterator NoteSet::erase(const iterator& iter)
 {
 	m_ids.removeId(iter->getId());
 	m_notes.erase(iter->getId());
-	OrderList::iterator newIter = m_order.erase(iter.m_Iter);
+	OrderList::iterator newIter = m_order.erase(iter.m_iter);
 	return iterator(*this, newIter);
 }
 

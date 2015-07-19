@@ -103,9 +103,9 @@ private:
 	iterator(NoteSet& notes, OrderList::iterator iter);
 	void UpdateCurNote();
 
-	NoteSet* m_Notes;
-	OrderList::iterator m_Iter;
-	Note* m_CurNote;
+	NoteSet* m_notes;
+	OrderList::iterator m_iter;
+	Note* m_curNote;
 };
 
 class NoteSet::const_iterator : public std::iterator<std::random_access_iterator_tag, const Note>
@@ -144,9 +144,9 @@ private:
 	const_iterator(const NoteSet& notes, OrderList::const_iterator iter);
 	void UpdateCurNote();
 
-	const NoteSet* m_Notes;
-	OrderList::const_iterator m_Iter;
-	const Note* m_CurNote;
+	const NoteSet* m_notes;
+	OrderList::const_iterator m_iter;
+	const Note* m_curNote;
 };
 
 template <typename Pred>
@@ -159,18 +159,18 @@ void NoteSet::sort(const Pred& pred)
 }
 
 inline NoteSet::iterator::iterator()
-	: m_Notes(nullptr), m_CurNote(nullptr)
+	: m_notes(nullptr), m_curNote(nullptr)
 {
 }
 
 inline NoteSet::iterator::reference NoteSet::iterator::operator*() const
 {
-	return *m_CurNote;
+	return *m_curNote;
 }
 
 inline NoteSet::iterator::pointer NoteSet::iterator::operator->() const
 {
-	return m_CurNote;
+	return m_curNote;
 }
 
 inline NoteSet::iterator::reference NoteSet::iterator::operator[](difference_type offset) const
@@ -180,37 +180,37 @@ inline NoteSet::iterator::reference NoteSet::iterator::operator[](difference_typ
 
 inline bool NoteSet::iterator::operator==(const iterator& other) const
 {
-	return m_Iter == other.m_Iter;
+	return m_iter == other.m_iter;
 }
 
 inline bool NoteSet::iterator::operator!=(const iterator& other) const
 {
-	return m_Iter != other.m_Iter;
+	return m_iter != other.m_iter;
 }
 
 inline bool NoteSet::iterator::operator<(const iterator& other) const
 {
-	return m_Iter < other.m_Iter;
+	return m_iter < other.m_iter;
 }
 
 inline bool NoteSet::iterator::operator<=(const iterator& other) const
 {
-	return m_Iter <= other.m_Iter;
+	return m_iter <= other.m_iter;
 }
 
 inline bool NoteSet::iterator::operator>(const iterator& other) const
 {
-	return m_Iter > other.m_Iter;
+	return m_iter > other.m_iter;
 }
 
 inline bool NoteSet::iterator::operator>=(const iterator& other) const
 {
-	return m_Iter >= other.m_Iter;
+	return m_iter >= other.m_iter;
 }
 
 inline NoteSet::iterator& NoteSet::iterator::operator++()
 {
-	++m_Iter;
+	++m_iter;
 	UpdateCurNote();
 	return *this;
 }
@@ -224,7 +224,7 @@ inline NoteSet::iterator NoteSet::iterator::operator++(int post)
 
 inline NoteSet::iterator& NoteSet::iterator::operator--()
 {
-	--m_Iter;
+	--m_iter;
 	UpdateCurNote();
 	return *this;
 }
@@ -238,7 +238,7 @@ inline NoteSet::iterator NoteSet::iterator::operator--(int post)
 
 inline NoteSet::iterator::difference_type NoteSet::iterator::operator-(const iterator& other) const
 {
-	return m_Iter - other.m_Iter;
+	return m_iter - other.m_iter;
 }
 
 inline NoteSet::iterator NoteSet::iterator::operator+(difference_type offset) const
@@ -257,50 +257,50 @@ inline NoteSet::iterator NoteSet::iterator::operator-(difference_type offset) co
 
 inline NoteSet::iterator& NoteSet::iterator::operator+=(difference_type offset)
 {
-	m_Iter += offset;
+	m_iter += offset;
 	UpdateCurNote();
 	return *this;
 }
 
 inline NoteSet::iterator& NoteSet::iterator::operator-=(difference_type offset)
 {
-	m_Iter -= offset;
+	m_iter -= offset;
 	UpdateCurNote();
 	return *this;
 }
 
 inline NoteSet::iterator::iterator(NoteSet& notes, OrderList::iterator iter)
-	: m_Notes(&notes), m_Iter(iter)
+	: m_notes(&notes), m_iter(iter)
 {
 	UpdateCurNote();
 }
 
 inline void NoteSet::iterator::UpdateCurNote()
 {
-	if (m_Iter == m_Notes->m_order.end())
-		m_CurNote = nullptr;
+	if (m_iter == m_notes->m_order.end())
+		m_curNote = nullptr;
 	else
-		m_CurNote = &m_Notes->m_notes.find(*m_Iter)->second;
+		m_curNote = &m_notes->m_notes.find(*m_iter)->second;
 }
 
 inline NoteSet::const_iterator::const_iterator()
-	: m_Notes(nullptr), m_CurNote(nullptr)
+	: m_notes(nullptr), m_curNote(nullptr)
 {
 }
 
 inline NoteSet::const_iterator::const_iterator(const NoteSet::iterator& iter)
-	: m_Notes(iter.m_Notes), m_Iter(iter.m_Iter), m_CurNote(iter.m_CurNote)
+	: m_notes(iter.m_notes), m_iter(iter.m_iter), m_curNote(iter.m_curNote)
 {
 }
 
 inline NoteSet::const_iterator::reference NoteSet::const_iterator::operator*() const
 {
-	return *m_CurNote;
+	return *m_curNote;
 }
 
 inline NoteSet::const_iterator::pointer NoteSet::const_iterator::operator->() const
 {
-	return m_CurNote;
+	return m_curNote;
 }
 
 inline NoteSet::const_iterator::reference NoteSet::const_iterator::operator[](
@@ -311,37 +311,37 @@ inline NoteSet::const_iterator::reference NoteSet::const_iterator::operator[](
 
 inline bool NoteSet::const_iterator::operator==(const const_iterator& other) const
 {
-	return m_Iter == other.m_Iter;
+	return m_iter == other.m_iter;
 }
 
 inline bool NoteSet::const_iterator::operator!=(const const_iterator& other) const
 {
-	return m_Iter != other.m_Iter;
+	return m_iter != other.m_iter;
 }
 
 inline bool NoteSet::const_iterator::operator<(const const_iterator& other) const
 {
-	return m_Iter < other.m_Iter;
+	return m_iter < other.m_iter;
 }
 
 inline bool NoteSet::const_iterator::operator<=(const const_iterator& other) const
 {
-	return m_Iter <= other.m_Iter;
+	return m_iter <= other.m_iter;
 }
 
 inline bool NoteSet::const_iterator::operator>(const const_iterator& other) const
 {
-	return m_Iter > other.m_Iter;
+	return m_iter > other.m_iter;
 }
 
 inline bool NoteSet::const_iterator::operator>=(const const_iterator& other) const
 {
-	return m_Iter >= other.m_Iter;
+	return m_iter >= other.m_iter;
 }
 
 inline NoteSet::const_iterator& NoteSet::const_iterator::operator++()
 {
-	++m_Iter;
+	++m_iter;
 	UpdateCurNote();
 	return *this;
 }
@@ -355,7 +355,7 @@ inline NoteSet::const_iterator NoteSet::const_iterator::operator++(int post)
 
 inline NoteSet::const_iterator& NoteSet::const_iterator::operator--()
 {
-	--m_Iter;
+	--m_iter;
 	UpdateCurNote();
 	return *this;
 }
@@ -370,7 +370,7 @@ inline NoteSet::const_iterator NoteSet::const_iterator::operator--(int post)
 inline NoteSet::const_iterator::difference_type NoteSet::const_iterator::operator-(
 	const const_iterator& other) const
 {
-	return m_Iter - other.m_Iter;
+	return m_iter - other.m_iter;
 }
 
 inline NoteSet::const_iterator NoteSet::const_iterator::operator+(difference_type offset) const
@@ -389,30 +389,30 @@ inline NoteSet::const_iterator NoteSet::const_iterator::operator-(difference_typ
 
 inline NoteSet::const_iterator& NoteSet::const_iterator::operator+=(difference_type offset)
 {
-	m_Iter += offset;
+	m_iter += offset;
 	UpdateCurNote();
 	return *this;
 }
 
 inline NoteSet::const_iterator& NoteSet::const_iterator::operator-=(difference_type offset)
 {
-	m_Iter -= offset;
+	m_iter -= offset;
 	UpdateCurNote();
 	return *this;
 }
 
 inline NoteSet::const_iterator::const_iterator(const NoteSet& notes, OrderList::const_iterator iter)
-	: m_Notes(&notes), m_Iter(iter)
+	: m_notes(&notes), m_iter(iter)
 {
 	UpdateCurNote();
 }
 
 inline void NoteSet::const_iterator::UpdateCurNote()
 {
-	if (m_Iter == m_Notes->m_order.end())
-		m_CurNote = nullptr;
+	if (m_iter == m_notes->m_order.end())
+		m_curNote = nullptr;
 	else
-		m_CurNote = &m_Notes->m_notes.find(*m_Iter)->second;
+		m_curNote = &m_notes->m_notes.find(*m_iter)->second;
 }
 
 } // namespace NoteVault
