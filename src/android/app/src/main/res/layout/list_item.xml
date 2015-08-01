@@ -11,4 +11,5 @@
 	android:id="@+id/itemText"
 	android:textColor="@color/primary_text_default_material_light"
 	android:longClickable="true"
-	android:clickable="true"/>
+	android:clickable="true"
+	android:background="@drawable/list_item"/>

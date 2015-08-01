@@ -28,23 +28,13 @@ import android.widget.EditText;
 
 import com.akb.notevault.R;
 
-public class RenameDialog extends DialogFragment
+public class AddDialog extends DialogFragment
 {
-	public String getInitialName()
+	public String getName()
 	{
-		return m_name;
-	}
-
-	public void setInitialName(String name)
-	{
-		m_name = name;
-	}
-
-	public String getNewName()
-	{
-		if (m_newName == null)
-			return m_name;
-		return m_newName.getText().toString();
+		if (m_name == null)
+			return "";
+		return m_name.getText().toString();
 	}
 
 	public OnDialogAcceptedListener getOnDialogAcceptedListener()
@@ -64,11 +54,10 @@ public class RenameDialog extends DialogFragment
 		LayoutInflater inflater = getActivity().getLayoutInflater();
 
 		View rootView = inflater.inflate(R.layout.rename_dialog, null);
-		m_newName = (EditText)rootView.findViewById(R.id.newName);
-		m_newName.setText(m_name);
+		m_name = (EditText)rootView.findViewById(R.id.newName);
 
 		builder.setView(rootView);
-		builder.setPositiveButton(R.string.button_rename, null);
+		builder.setPositiveButton(R.string.button_add, null);
 		builder.setNegativeButton(R.string.button_cancel, null);
 
 		final AlertDialog alertDialog = builder.create();
@@ -83,14 +72,9 @@ public class RenameDialog extends DialogFragment
 					@Override
 					public void onClick(View view)
 					{
-						if (getNewName().isEmpty())
+						if (getName().isEmpty())
 						{
 							ErrorDialog.show(getActivity(), R.string.error_empty_name);
-							return;
-						}
-						else if (getInitialName() == getNewName())
-						{
-							dismiss();
 							return;
 						}
 
@@ -98,12 +82,12 @@ public class RenameDialog extends DialogFragment
 							dismiss();
 						else
 						{
-							if (m_acceptedListener.onDialogAccepted(RenameDialog.this))
+							if (m_acceptedListener.onDialogAccepted(AddDialog.this))
 								dismiss();
 							else
 							{
 								String message = getString(R.string.error_same_name);
-								message = message.replace("%s", getNewName());
+								message = message.replace("%s", getName());
 								ErrorDialog.show(getActivity(), message);
 							}
 						}
@@ -116,6 +100,5 @@ public class RenameDialog extends DialogFragment
 	}
 
 	private OnDialogAcceptedListener m_acceptedListener;
-	private String m_name;
-	private EditText m_newName;
+	private EditText m_name;
 }

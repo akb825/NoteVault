@@ -30,6 +30,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.akb.notevault.dialogs.AddDialog;
 import com.akb.notevault.dialogs.OnDialogAcceptedListener;
 import com.akb.notevault.dialogs.RemoveDialog;
 import com.akb.notevault.dialogs.RenameDialog;
@@ -91,8 +92,9 @@ public class NoteListSelection extends AppCompatActivity
 
 	public void addNoteList(View view)
 	{
-		m_noteListsAdapter.add(new ListItem("New Note"));
-		sortNoteLists();
+		AddDialog addDialog = new AddDialog();
+		addDialog.setOnDialogAcceptedListener(new AddNoteListener());
+		addDialog.show(getSupportFragmentManager(), "add note list");
 	}
 
 	private void populateNoteLists()
@@ -104,22 +106,22 @@ public class NoteListSelection extends AppCompatActivity
 		m_noteListsAdapter.sort(new ItemCompare());
 	}
 
+	private boolean canHaveNoteList(String name)
+	{
+		for (int i = 0; i < m_noteListsAdapter.getCount(); ++i)
+		{
+			if (m_noteListsAdapter.getItem(i).getName().equals(name))
+				return false;
+		}
+
+		return true;
+	}
+
 	private class ListItem
 	{
-		public ListItem(String name)
-		{
-			m_name = name;
-		}
-
-		public String getName()
-		{
-			return m_name;
-		}
-
-		public void setName(String name)
-		{
-			m_name = name;
-		}
+		public ListItem(String name) { m_name = name; }
+		public String getName() { return m_name; }
+		public void setName(String name) { m_name = name; }
 
 		@Override
 		public String toString()
@@ -166,6 +168,21 @@ public class NoteListSelection extends AppCompatActivity
 		public void onClick(View view)
 		{
 			System.out.printf("click\n");
+		}
+	}
+
+	private class AddNoteListener implements OnDialogAcceptedListener
+	{
+		@Override
+		public boolean onDialogAccepted(DialogFragment dialog)
+		{
+			String name = ((AddDialog)dialog).getName();
+			if (!canHaveNoteList(name))
+				return false;
+
+			m_noteListsAdapter.add(new ListItem(name));
+			sortNoteLists();
+			return true;
 		}
 	}
 
@@ -217,13 +234,17 @@ public class NoteListSelection extends AppCompatActivity
 		}
 
 		@Override
-		public void onDialogAccepted(DialogFragment dialog)
+		public boolean onDialogAccepted(DialogFragment dialog)
 		{
 			String newName = ((RenameDialog)dialog).getNewName();
+			if (!canHaveNoteList(newName))
+				return false;
+
 			ListItem item = (ListItem)m_noteListView.getTag();
 			item.setName(newName);
 			m_noteListView.setText(newName);
 			sortNoteLists();
+			return true;
 		}
 
 		private TextView m_noteListView;
@@ -237,9 +258,10 @@ public class NoteListSelection extends AppCompatActivity
 		}
 
 		@Override
-		public void onDialogAccepted(DialogFragment dialog)
+		public boolean onDialogAccepted(DialogFragment dialog)
 		{
 			m_noteListsAdapter.remove((ListItem) m_noteListView.getTag());
+			return true;
 		}
 
 		private TextView m_noteListView;

@@ -21,6 +21,8 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
+import android.view.View;
+import android.widget.Button;
 
 import com.akb.notevault.R;
 
@@ -54,25 +56,36 @@ public class RemoveDialog extends DialogFragment
 		String message = getString(R.string.message_confirm_remove);
 		message = message.replace("%s", m_name);
 		builder.setMessage(message);
-		builder.setPositiveButton(R.string.button_remove, new DialogInterface.OnClickListener()
+		builder.setPositiveButton(R.string.button_remove, null);
+		builder.setNegativeButton(R.string.button_cancel, null);
+
+		final AlertDialog alertDialog = builder.create();
+		alertDialog.setOnShowListener(new DialogInterface.OnShowListener()
 		{
 			@Override
-			public void onClick(DialogInterface dialog, int id)
+			public void onShow(DialogInterface dialog)
 			{
-				if (m_acceptedListener != null)
-					m_acceptedListener.onDialogAccepted(RemoveDialog.this);
-			}
-		});
-		builder.setNegativeButton(R.string.button_cancel, new DialogInterface.OnClickListener()
-		{
-			@Override
-			public void onClick(DialogInterface dialog, int id)
-			{
-				RemoveDialog.this.getDialog().cancel();
+				Button button = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+				button.setOnClickListener(new View.OnClickListener()
+				{
+					@Override
+					public void onClick(View view)
+					{
+						if (m_acceptedListener == null)
+							dismiss();
+						else
+						{
+							if (m_acceptedListener.onDialogAccepted(RemoveDialog.this))
+								dismiss();
+							else
+								ErrorDialog.show(getActivity(), R.string.error_remove);
+						}
+					}
+				});
 			}
 		});
 
-		return builder.create();
+		return alertDialog;
 	}
 
 	private OnDialogAcceptedListener m_acceptedListener;

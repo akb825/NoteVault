@@ -16,9 +16,25 @@
 
 package com.akb.notevault.dialogs;
 
-import android.support.v4.app.DialogFragment;
+import android.app.Activity;
+import android.app.Dialog;
+import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 
-public interface OnDialogAcceptedListener
+import com.akb.notevault.R;
+
+public class ErrorDialog
 {
-	boolean onDialogAccepted(DialogFragment dialog);
+	public static void show(Activity activity, String errorMessage)
+	{
+		AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+		builder.setMessage(errorMessage);
+		builder.setPositiveButton(R.string.button_ok, null);
+		builder.create().show();
+	}
+
+	public static void show(Activity activity, int errorMessageResource)
+	{
+		show(activity, activity.getString(errorMessageResource));
+	}
 }

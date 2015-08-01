@@ -8,12 +8,17 @@
 	<string name="button_close">Close</string>
 	<string name="button_rename">Rename</string>
 	<string name="button_cancel">Cancel</string>
+	<string name="button_ok">OK</string>
 
 	<string name="title_note_lists">Note Lists</string>
 	<string name="title_help_screen">About Note Vault</string>
 	<string name="title_rename">New name</string>
 
 	<string name="message_confirm_remove">Do you wish to remove %s?</string>
+
+	<string name="error_empty_name">Please enter a name.</string>
+	<string name="error_same_name">Item of name %s already exists or is an invalid name.</string>
+	<string name="error_remove">Error removing %s.</string>
 
 	<string name="menu_item_rename">Rename</string>
 	<string name="menu_item_remove">Remove</string>
