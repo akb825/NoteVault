@@ -207,7 +207,7 @@ NoteFile::Result NoteFile::loadNotes(NoteSet& notes, IStream& stream, const std:
 NoteFile::Result NoteFile::saveNotes(const NoteSet& notes, OStream& stream,
 	const std::vector<uint8_t>& salt, const std::vector<uint8_t>& key)
 {
-	//Read the header: magic string, version, salt, and initialization vector.
+	//Write the header: magic string, version, salt, and initialization vector.
 	if (stream.write(cMagicString, sizeof(cMagicString)) != sizeof(cMagicString))
 		return Result::IoError;
 
