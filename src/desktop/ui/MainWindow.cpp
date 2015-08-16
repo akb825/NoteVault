@@ -110,7 +110,7 @@ public:
 	{
 		NoteSet& noteSet = m_parent->m_notes->noteSet;
 		NoteSet::iterator foundIter = noteSet.find(m_note.getId());
-		ptrdiff_t index = m_parent->m_notes->selectedNote - m_parent->m_notes->noteSet.begin();
+		ptrdiff_t index = foundIter - m_parent->m_notes->noteSet.begin();
 		delete m_parent->m_impl->noteList->takeItem(static_cast<int>(index));
 		noteSet.erase(foundIter);
 
@@ -256,7 +256,7 @@ MainWindow::MainWindow()
 
 	// Timer
 	QObject::connect(&m_children->timer, SIGNAL(timeout()), this, SLOT(updateMenuItems()));
-	m_children->timer.start(0);
+	m_children->timer.start(1);
 }
 
 MainWindow::~MainWindow()
@@ -273,51 +273,67 @@ bool MainWindow::open(const std::string& filePath)
 		return false;
 	}
 
-	if (!m_children->openPasswordDialog.exec())
-		return false;
+	NoteFile::Result result = NoteFile::Result::Success;
 
-	std::string password = m_children->openPasswordDialog.getPassword();
-	assert(!password.empty());
-
-	QFileInfo fileInfo(filePath.c_str());
-	std::string fileName = fileInfo.fileName().toStdString();
-	size_t extensionPos = fileName.find_last_of('.');
-	if (extensionPos != std::string::npos)
-		fileName = fileName.substr(0, extensionPos);
-
-	std::vector<uint8_t> salt, key;
-	NoteSet noteSet;
-	NoteFile::Result result = NoteFile::loadNotes(noteSet, stream, password, salt, key);
-	switch (result)
+	do
 	{
-		case NoteFile::Result::Success:
-			clear();
-			m_notes->noteSet = noteSet;
-			m_notes->savePath = filePath;
-			m_notes->fileName = fileName;
-			m_notes->salt = salt;
-			m_notes->key = key;
+		if (!m_children->openPasswordDialog.exec())
+			return false;
 
-			updateTitle();
-			updateUi();
-			return true;
-		case NoteFile::Result::InvalidFile:
-			QMessageBox::warning(this, "Couldn't Open", "Invalid file format");
-			break;
-		case NoteFile::Result::InvalidVersion:
-			QMessageBox::warning(this, "Couldn't Open",
-				"File version is too new. Please update Note Vault.");
-			break;
-		case NoteFile::Result::IoError:
-			QMessageBox::warning(this, "Couldn't Open", "Error reading file");
-			break;
-		case NoteFile::Result::EncryptionError:
-			QMessageBox::warning(this, "Couldn't Open", "Incorrect password");
-			break;
-		default:
-			assert(false);
-			break;
-	}
+		// Need to re-open the file if retrying.
+		if (result != NoteFile::Result::Success)
+		{
+			if (!stream.open(filePath))
+			{
+				std::string message = "Couldn't open file '" + filePath + "'";
+				QMessageBox::warning(this, "Couldn't Open", message.c_str());
+				return false;
+			}
+		}
+
+		std::string password = m_children->openPasswordDialog.getPassword();
+		assert(!password.empty());
+
+		QFileInfo fileInfo(filePath.c_str());
+		std::string fileName = fileInfo.fileName().toStdString();
+		size_t extensionPos = fileName.find_last_of('.');
+		if (extensionPos != std::string::npos)
+			fileName = fileName.substr(0, extensionPos);
+
+		std::vector<uint8_t> salt, key;
+		NoteSet noteSet;
+		result = NoteFile::loadNotes(noteSet, stream, password, salt, key);
+		switch (result)
+		{
+			case NoteFile::Result::Success:
+				clear();
+				m_notes->noteSet = noteSet;
+				m_notes->savePath = filePath;
+				m_notes->fileName = fileName;
+				m_notes->salt = salt;
+				m_notes->key = key;
+
+				updateTitle();
+				updateUi();
+				return true;
+			case NoteFile::Result::InvalidFile:
+				QMessageBox::warning(this, "Couldn't Open", "Invalid file format");
+				break;
+			case NoteFile::Result::InvalidVersion:
+				QMessageBox::warning(this, "Couldn't Open",
+					"File version is too new. Please update Note Vault.");
+				break;
+			case NoteFile::Result::IoError:
+				QMessageBox::warning(this, "Couldn't Open", "Error reading file");
+				break;
+			case NoteFile::Result::EncryptionError:
+				QMessageBox::warning(this, "Couldn't Open", "Incorrect password");
+				break;
+			default:
+				assert(false);
+				break;
+		}
+	} while (result == NoteFile::Result::EncryptionError);
 
 	return false;
 }
