@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-#define VERSION_STRING "0.2.0"
+#define VERSION_STRING "0.3.0"
