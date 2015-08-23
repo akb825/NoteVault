@@ -47,6 +47,13 @@ public class RenameDialog extends DialogFragment
 		return m_newName.getText().toString();
 	}
 
+	public String getPassword()
+	{
+		if (m_password == null)
+			return "";
+		return m_password.getText().toString();
+	}
+
 	public OnDialogAcceptedListener getOnDialogAcceptedListener()
 	{
 		return m_acceptedListener;
@@ -66,6 +73,7 @@ public class RenameDialog extends DialogFragment
 		View rootView = inflater.inflate(R.layout.rename_dialog, null);
 		m_newName = (EditText)rootView.findViewById(R.id.newName);
 		m_newName.setText(m_name);
+		m_password = (EditText)rootView.findViewById(R.id.password);
 
 		builder.setView(rootView);
 		builder.setPositiveButton(R.string.button_rename, null);
@@ -88,24 +96,22 @@ public class RenameDialog extends DialogFragment
 							ErrorDialog.show(getActivity(), R.string.error_empty_name);
 							return;
 						}
-						else if (getInitialName() == getNewName())
+						else if (getInitialName().equals(getNewName()))
 						{
 							dismiss();
 							return;
 						}
 
-						if (m_acceptedListener == null)
-							dismiss();
-						else
+						if (getPassword().isEmpty())
 						{
-							if (m_acceptedListener.onDialogAccepted(RenameDialog.this))
-								dismiss();
-							else
-							{
-								String message = getString(R.string.error_same_name);
-								message = message.replace("%s", getNewName());
-								ErrorDialog.show(getActivity(), message);
-							}
+							ErrorDialog.show(getActivity(), R.string.error_empty_password);
+							return;
+						}
+
+						if (m_acceptedListener == null ||
+							m_acceptedListener.onDialogAccepted(RenameDialog.this))
+						{
+							dismiss();
 						}
 					}
 				});
@@ -117,5 +123,6 @@ public class RenameDialog extends DialogFragment
 
 	private OnDialogAcceptedListener m_acceptedListener;
 	private String m_name;
+	private EditText m_password;
 	private EditText m_newName;
 }

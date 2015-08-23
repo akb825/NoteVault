@@ -5,26 +5,12 @@
 			  android:layout_height="match_parent"
 			  android:padding="5dp">
 
-	<TextView
+    <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="@string/label_name"
-        android:id="@+id/textView2"
-        />
-
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <EditText
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/newName"
-            android:singleLine="true"
-            android:layout_weight="1"/>
-    </LinearLayout>
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Large Text"
+        android:id="@+id/openLabel"/>
 
     <TextView
         android:layout_width="wrap_content"

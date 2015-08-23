@@ -21,8 +21,11 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import com.akb.notevault.R;
 
@@ -36,6 +39,13 @@ public class RemoveDialog extends DialogFragment
 	public void setName(String name)
 	{
 		m_name = name;
+	}
+
+	public String getPassword()
+	{
+		if (m_password == null)
+			return "";
+		return m_password.getText().toString();
 	}
 
 	public OnDialogAcceptedListener getOnDialogAcceptedListener()
@@ -52,10 +62,17 @@ public class RemoveDialog extends DialogFragment
 	public Dialog onCreateDialog(Bundle savedInstanceState)
 	{
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+		LayoutInflater inflater = getActivity().getLayoutInflater();
 
-		String message = getString(R.string.message_confirm_remove);
+		String message = getString(R.string.label_confirm_remove);
 		message = message.replace("%s", m_name);
-		builder.setMessage(message);
+
+		View rootView = inflater.inflate(R.layout.remove_dialog, null);
+		TextView removeLabel = (TextView)rootView.findViewById(R.id.removeLabel);
+		removeLabel.setText(message);
+		m_password = (EditText)rootView.findViewById(R.id.password);
+
+		builder.setView(rootView);
 		builder.setPositiveButton(R.string.button_remove, null);
 		builder.setNegativeButton(R.string.button_cancel, null);
 
@@ -71,14 +88,16 @@ public class RemoveDialog extends DialogFragment
 					@Override
 					public void onClick(View view)
 					{
-						if (m_acceptedListener == null)
-							dismiss();
-						else
+						if (getPassword().isEmpty())
 						{
-							if (m_acceptedListener.onDialogAccepted(RemoveDialog.this))
-								dismiss();
-							else
-								ErrorDialog.show(getActivity(), R.string.error_remove);
+							ErrorDialog.show(getActivity(), R.string.error_empty_password);
+							return;
+						}
+
+						if (m_acceptedListener == null ||
+							m_acceptedListener.onDialogAccepted(RemoveDialog.this))
+						{
+							dismiss();
 						}
 					}
 				});
@@ -90,4 +109,5 @@ public class RemoveDialog extends DialogFragment
 
 	private OnDialogAcceptedListener m_acceptedListener;
 	private String m_name;
+	private EditText m_password;
 }

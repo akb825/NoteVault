@@ -14,12 +14,19 @@
 	<string name="title_help_screen">About Note Vault</string>
 	<string name="title_rename">New name</string>
 
-	<string name="message_confirm_remove">Do you wish to remove %s?</string>
+	<string name="label_name">Name</string>
+	<string name="label_password">Password</string>
+	<string name="label_password_confirm">Confirm password</string>
+	<string name="label_confirm_remove">Do you wish to remove %s?</string>
 
 	<string name="error_empty_name">Please enter a name.</string>
 	<string name="error_same_name">Item of name %s already exists or is an invalid name.</string>
+	<string name="error_empty_password">Please enter a password.</string>
+	<string name="error_password_mismatch">Passwords don\'t match.</string>
+	<string name="error_bad_password">Incorrect password.</string>
 	<string name="error_remove">Error removing %s.</string>
 
+	<string name="menu_item_open">Open</string>
 	<string name="menu_item_rename">Rename</string>
 	<string name="menu_item_remove">Remove</string>
 

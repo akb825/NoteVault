@@ -31,7 +31,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.akb.notevault.dialogs.AddDialog;
+import com.akb.notevault.dialogs.ErrorDialog;
 import com.akb.notevault.dialogs.OnDialogAcceptedListener;
+import com.akb.notevault.dialogs.OpenDialog;
 import com.akb.notevault.dialogs.RemoveDialog;
 import com.akb.notevault.dialogs.RenameDialog;
 
@@ -152,9 +154,9 @@ public class NoteListSelection extends AppCompatActivity
 		public View getView(int position, View convertView, ViewGroup parent)
 		{
 			View view = super.getView(position, convertView, parent);
-			View textView = view.findViewById(m_textViewResourceId);
+			TextView textView = (TextView)view.findViewById(m_textViewResourceId);
 			textView.setTag(getItem(position));
-			textView.setOnClickListener(new OpenNoteListener());
+			textView.setOnClickListener(new OpenListener(textView));
 			registerForContextMenu(textView);
 			return view;
 		}
@@ -162,12 +164,31 @@ public class NoteListSelection extends AppCompatActivity
 		private int m_textViewResourceId;
 	}
 
-	private class OpenNoteListener implements View.OnClickListener
+	private class OpenListener implements View.OnClickListener
 	{
+		public OpenListener(TextView noteListView)
+		{
+			m_noteListView = noteListView;
+		}
+
 		@Override
 		public void onClick(View view)
 		{
-			System.out.printf("click\n");
+			OpenDialog openDialog = new OpenDialog();
+			openDialog.setName(m_noteListView.getText().toString());
+			openDialog.setOnDialogAcceptedListener(new OpenNoteListener());
+			openDialog.show(getSupportFragmentManager(), "open note list");
+		}
+
+		private TextView m_noteListView;
+	}
+
+	private class OpenNoteListener implements OnDialogAcceptedListener
+	{
+		@Override
+		public boolean onDialogAccepted(DialogFragment dialog)
+		{
+			return true;
 		}
 	}
 
@@ -178,7 +199,11 @@ public class NoteListSelection extends AppCompatActivity
 		{
 			String name = ((AddDialog)dialog).getName();
 			if (!canHaveNoteList(name))
+			{
+				String message = getString(R.string.error_same_name).replace("%s", name);
+				ErrorDialog.show(NoteListSelection.this, message);
 				return false;
+			}
 
 			m_noteListsAdapter.add(new ListItem(name));
 			sortNoteLists();
@@ -238,7 +263,11 @@ public class NoteListSelection extends AppCompatActivity
 		{
 			String newName = ((RenameDialog)dialog).getNewName();
 			if (!canHaveNoteList(newName))
+			{
+				String message = getString(R.string.error_same_name).replace("%s", newName);
+				ErrorDialog.show(NoteListSelection.this, message);
 				return false;
+			}
 
 			ListItem item = (ListItem)m_noteListView.getTag();
 			item.setName(newName);

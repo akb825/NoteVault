@@ -25,16 +25,20 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.akb.notevault.R;
 
-public class AddDialog extends DialogFragment
+public class OpenDialog extends DialogFragment
 {
 	public String getName()
 	{
-		if (m_name == null)
-			return "";
-		return m_name.getText().toString();
+		return m_name;
+	}
+
+	public void setName(String name)
+	{
+		m_name = name;
 	}
 
 	public String getPassword()
@@ -60,13 +64,13 @@ public class AddDialog extends DialogFragment
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 		LayoutInflater inflater = getActivity().getLayoutInflater();
 
-		View rootView = inflater.inflate(R.layout.add_dialog, null);
-		m_name = (EditText)rootView.findViewById(R.id.newName);
+		View rootView = inflater.inflate(R.layout.open_dialog, null);
+		TextView openLabel = (TextView)rootView.findViewById(R.id.openLabel);
+		openLabel.setText(m_name);
 		m_password = (EditText)rootView.findViewById(R.id.password);
-		m_passwordConfirm = (EditText)rootView.findViewById(R.id.passwordConfirm);
 
 		builder.setView(rootView);
-		builder.setPositiveButton(R.string.button_add, null);
+		builder.setPositiveButton(R.string.button_open, null);
 		builder.setNegativeButton(R.string.button_cancel, null);
 
 		final AlertDialog alertDialog = builder.create();
@@ -81,27 +85,14 @@ public class AddDialog extends DialogFragment
 					@Override
 					public void onClick(View view)
 					{
-						if (getName().isEmpty())
-						{
-							ErrorDialog.show(getActivity(), R.string.error_empty_name);
-							return;
-						}
-
-						String password = getPassword();
-						if (password.isEmpty())
+						if (getPassword().isEmpty())
 						{
 							ErrorDialog.show(getActivity(), R.string.error_empty_password);
 							return;
 						}
 
-						if (!password.equals(m_passwordConfirm.getText().toString()))
-						{
-							ErrorDialog.show(getActivity(), R.string.error_password_mismatch);
-							return;
-						}
-
 						if (m_acceptedListener == null ||
-							m_acceptedListener.onDialogAccepted(AddDialog.this))
+							m_acceptedListener.onDialogAccepted(OpenDialog.this))
 						{
 							dismiss();
 						}
@@ -114,7 +105,6 @@ public class AddDialog extends DialogFragment
 	}
 
 	private OnDialogAcceptedListener m_acceptedListener;
-	private EditText m_name;
+	private String m_name;
 	private EditText m_password;
-	private EditText m_passwordConfirm;
 }
