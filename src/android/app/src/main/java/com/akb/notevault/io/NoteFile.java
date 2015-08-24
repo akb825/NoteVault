@@ -21,6 +21,10 @@ import com.akb.notevault.notes.NoteSet;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,8 +32,6 @@ import java.nio.charset.Charset;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -41,6 +43,7 @@ import javax.crypto.spec.IvParameterSpec;
 public class NoteFile
 {
 	public static final int cFileVersion = 0;
+	public static final String cExtension = ".secnote";
 
 	public enum Result
 	{
@@ -57,7 +60,31 @@ public class NoteFile
 		public NoteSet notes;
 		public byte[] salt;
 		public SecretKey key;
-	};
+	}
+
+	public static LoadResult loadNotes(File file, String password)
+	{
+		FileInputStream stream;
+		try
+		{
+			stream = new FileInputStream(file);
+		}
+		catch (FileNotFoundException e)
+		{
+			LoadResult result = new LoadResult();
+			result.result = Result.IoError;
+			return result;
+		}
+
+		LoadResult result = loadNotes(stream, password);
+		try
+		{
+			stream.close();
+		}
+		catch (IOException e) {}
+
+		return result;
+	}
 
 	public static LoadResult loadNotes(InputStream stream, String password)
 	{
@@ -86,7 +113,8 @@ public class NoteFile
 			byte[] salt = new byte[saltLen];
 			dataStream.read(salt);
 
-			int numIterations = dataStream.readInt();
+			int numIterations = Crypto.cDefaultKeyIterations;
+			//If an older file version, set the number of iterations based on that version.
 			SecretKey key = Crypto.generateKey(password, salt, numIterations);
 
 			int ivLen = dataStream.readInt();
@@ -99,32 +127,11 @@ public class NoteFile
 			DataInputStream cryptoStream = new DataInputStream(new CipherInputStream(dataStream,
 				cipher));
 
-			//Read the magic string again to verify the correct key
-			magicStringCheck = new byte[m_magicString.length()];
-			cryptoStream.read(magicStringCheck);
-			if (!new String(magicStringCheck, m_charset).equals(m_magicString))
-			{
-				results.result = Result.EncryptionError;
-				return results;
-			}
-
-			//Read the notes
 			NoteSet notes = new NoteSet();
-			int numNotes = cryptoStream.readInt();
-			for (int i = 0; i < numNotes; ++i)
-			{
-				long id = cryptoStream.readLong();
-
-				Note note = new Note(id);
-				note.setTitle(readString(cryptoStream));
-				note.setMessage(readString(cryptoStream));
-
-				if (!notes.add(note))
-				{
-					results.result = Result.IoError;
-					return results;
-				}
-			}
+			results.result = loadNotesImpl(cryptoStream, notes);
+			cryptoStream.close();
+			if (results.result != Result.Success)
+				return results;
 
 			//If reading from an old file, re-calculate the key with the updated number of iterations.
 			if (numIterations != Crypto.cDefaultKeyIterations)
@@ -150,8 +157,149 @@ public class NoteFile
 		return results;
 	}
 
-	private static Result writeNotes(OutputStream stream, NoteSet notes, String password,
-		byte[] salt, PrivateKey key)
+	public static LoadResult loadNotes(File file, SecretKey key)
+	{
+		FileInputStream stream;
+		try
+		{
+			stream = new FileInputStream(file);
+		}
+		catch (FileNotFoundException e)
+		{
+			LoadResult result = new LoadResult();
+			result.result = Result.IoError;
+			return result;
+		}
+
+		LoadResult result = loadNotes(stream, key);
+		try
+		{
+			stream.close();
+		}
+		catch (IOException e) {}
+
+		return result;
+	}
+
+	public static LoadResult loadNotes(InputStream stream, SecretKey key)
+	{
+		LoadResult results = new LoadResult();
+		DataInputStream dataStream = new DataInputStream(stream);
+
+		try
+		{
+			//Read the header: magic string, version, salt, and initialization vector.
+			byte[] magicStringCheck = new byte[m_magicString.length()];
+			dataStream.read(magicStringCheck);
+			if (!new String(magicStringCheck, m_charset).equals(m_magicString))
+			{
+				results.result = Result.InvalidFile;
+				return results;
+			}
+
+			int version = dataStream.readInt();
+			if (version > cFileVersion)
+			{
+				results.result = Result.InvalidVersion;
+				return results;
+			}
+
+			int saltLen = dataStream.readInt();
+			byte[] salt = new byte[saltLen];
+			dataStream.read(salt);
+
+			int ivLen = dataStream.readInt();
+			byte[] iv = new byte[ivLen];
+			dataStream.read(iv);
+
+			//Main file. (encrypted)
+			Cipher cipher = Cipher.getInstance(m_encryptionAlgorithm);
+			cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
+			DataInputStream cryptoStream = new DataInputStream(new CipherInputStream(dataStream,
+				cipher));
+
+			NoteSet notes = new NoteSet();
+			results.result = loadNotesImpl(cryptoStream, notes);
+			cryptoStream.close();
+			if (results.result != Result.Success)
+				return results;
+
+			results.result = Result.Success;
+			results.notes = notes;
+			results.salt = salt;
+			results.key = key;
+		}
+		catch (IOException e)
+		{
+			results.result = Result.IoError;
+			return results;
+		}
+		catch (NoSuchPaddingException | NoSuchAlgorithmException |
+			InvalidAlgorithmParameterException | InvalidKeyException e)
+		{
+			results.result = Result.EncryptionError;
+			return results;
+		}
+
+		return results;
+	}
+
+	private static Result loadNotesImpl(DataInputStream cryptoStream, NoteSet notes) throws IOException
+	{
+		//Read the magic string again to verify the correct key
+		byte[] magicStringCheck = new byte[m_magicString.length()];
+		try
+		{
+			cryptoStream.read(magicStringCheck);
+		}
+		catch (IOException e)
+		{
+			return Result.EncryptionError;
+		}
+
+		if (!new String(magicStringCheck, m_charset).equals(m_magicString))
+			return Result.EncryptionError;
+
+		//Read the notes
+		int numNotes = cryptoStream.readInt();
+		for (int i = 0; i < numNotes; ++i)
+		{
+			long id = cryptoStream.readLong();
+
+			Note note = new Note(id);
+			note.setTitle(readString(cryptoStream));
+			note.setMessage(readString(cryptoStream));
+
+			if (!notes.add(note))
+				return Result.IoError;
+		}
+
+		return Result.Success;
+	}
+
+	public static Result writeNotes(File file, NoteSet notes, byte[] salt, SecretKey key)
+	{
+		FileOutputStream stream;
+		try
+		{
+			stream = new FileOutputStream(file);
+		}
+		catch (FileNotFoundException e)
+		{
+			return Result.IoError;
+		}
+
+		Result result = writeNotes(stream, notes, salt, key);
+		try
+		{
+			stream.close();
+		}
+		catch (IOException e) {}
+
+		return result;
+	}
+
+	public static Result writeNotes(OutputStream stream, NoteSet notes, byte[] salt, SecretKey key)
 	{
 		DataOutputStream dataStream = new DataOutputStream(stream);
 
@@ -188,7 +336,7 @@ public class NoteFile
 				writeString(cryptoStream, note.getMessage());
 			}
 
-			cryptoStream.flush();
+			cryptoStream.close();
 		}
 		catch (IOException e)
 		{

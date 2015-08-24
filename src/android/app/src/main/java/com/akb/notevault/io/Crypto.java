@@ -16,7 +16,6 @@
 
 package com.akb.notevault.io;
 
-import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
@@ -37,8 +36,7 @@ public class Crypto
 
 	public static SecretKey generateKey(String password, byte[] salt, int numIterations)
 	{
-		PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, numIterations,
-			cKeyLenBytes);
+		PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, numIterations, cKeyLen);
 		try
 		{
 			return m_keyFactory.generateSecret(keySpec);

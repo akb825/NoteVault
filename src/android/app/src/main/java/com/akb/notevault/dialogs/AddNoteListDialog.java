@@ -28,7 +28,7 @@ import android.widget.EditText;
 
 import com.akb.notevault.R;
 
-public class AddDialog extends DialogFragment
+public class AddNoteListDialog extends DialogFragment
 {
 	public String getName()
 	{
@@ -60,7 +60,7 @@ public class AddDialog extends DialogFragment
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 		LayoutInflater inflater = getActivity().getLayoutInflater();
 
-		View rootView = inflater.inflate(R.layout.add_dialog, null);
+		View rootView = inflater.inflate(R.layout.add_note_list_dialog, null);
 		m_name = (EditText)rootView.findViewById(R.id.newName);
 		m_password = (EditText)rootView.findViewById(R.id.password);
 		m_passwordConfirm = (EditText)rootView.findViewById(R.id.passwordConfirm);
@@ -101,7 +101,7 @@ public class AddDialog extends DialogFragment
 						}
 
 						if (m_acceptedListener == null ||
-							m_acceptedListener.onDialogAccepted(AddDialog.this))
+							m_acceptedListener.onDialogAccepted(AddNoteListDialog.this))
 						{
 							dismiss();
 						}

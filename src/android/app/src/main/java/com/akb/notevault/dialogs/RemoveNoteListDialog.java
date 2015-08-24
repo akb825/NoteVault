@@ -29,7 +29,7 @@ import android.widget.TextView;
 
 import com.akb.notevault.R;
 
-public class RemoveDialog extends DialogFragment
+public class RemoveNoteListDialog extends DialogFragment
 {
 	public String getName()
 	{
@@ -67,7 +67,7 @@ public class RemoveDialog extends DialogFragment
 		String message = getString(R.string.label_confirm_remove);
 		message = message.replace("%s", m_name);
 
-		View rootView = inflater.inflate(R.layout.remove_dialog, null);
+		View rootView = inflater.inflate(R.layout.remove_note_list_dialog, null);
 		TextView removeLabel = (TextView)rootView.findViewById(R.id.removeLabel);
 		removeLabel.setText(message);
 		m_password = (EditText)rootView.findViewById(R.id.password);
@@ -95,7 +95,7 @@ public class RemoveDialog extends DialogFragment
 						}
 
 						if (m_acceptedListener == null ||
-							m_acceptedListener.onDialogAccepted(RemoveDialog.this))
+							m_acceptedListener.onDialogAccepted(RemoveNoteListDialog.this))
 						{
 							dismiss();
 						}

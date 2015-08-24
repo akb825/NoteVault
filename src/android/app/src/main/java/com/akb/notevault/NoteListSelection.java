@@ -18,6 +18,7 @@ package com.akb.notevault;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Environment;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -30,14 +31,21 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.akb.notevault.dialogs.AddDialog;
+import com.akb.notevault.dialogs.AddNoteListDialog;
 import com.akb.notevault.dialogs.ErrorDialog;
 import com.akb.notevault.dialogs.OnDialogAcceptedListener;
-import com.akb.notevault.dialogs.OpenDialog;
-import com.akb.notevault.dialogs.RemoveDialog;
-import com.akb.notevault.dialogs.RenameDialog;
+import com.akb.notevault.dialogs.OpenNoteListDialog;
+import com.akb.notevault.dialogs.RemoveNoteListDialog;
+import com.akb.notevault.dialogs.RenameNoteListDialog;
+import com.akb.notevault.io.Crypto;
+import com.akb.notevault.io.NoteFile;
+import com.akb.notevault.notes.NoteSet;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.util.Comparator;
+
+import javax.crypto.SecretKey;
 
 
 public class NoteListSelection extends AppCompatActivity
@@ -52,8 +60,8 @@ public class NoteListSelection extends AppCompatActivity
 
 		m_noteListsAdapter = new CustomAdapter(getApplicationContext(), R.layout.list_item,
 			R.id.itemText);
-		m_noteListsView = (ListView)getWindow().getDecorView().findViewById(R.id.noteLists);
-		m_noteListsView.setAdapter(m_noteListsAdapter);
+		ListView noteListsView = (ListView)getWindow().getDecorView().findViewById(R.id.noteLists);
+		noteListsView.setAdapter(m_noteListsAdapter);
 		populateNoteLists();
 	}
 
@@ -61,7 +69,7 @@ public class NoteListSelection extends AppCompatActivity
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
 		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.menu_note_vault, menu);
+		getMenuInflater().inflate(R.menu.menu_note_list_selection, menu);
 		return true;
 	}
 
@@ -74,7 +82,12 @@ public class NoteListSelection extends AppCompatActivity
 		int id = item.getItemId();
 
 		//noinspection SimplifiableIfStatement
-		if (id == R.id.action_settings)
+		if (id == R.id.action_refresh)
+		{
+			populateNoteLists();
+			return true;
+		}
+		else if (id == R.id.action_help)
 		{
 			Intent intent = new Intent(this, HelpScreen.class);
 			startActivity(intent);
@@ -92,31 +105,81 @@ public class NoteListSelection extends AppCompatActivity
 		menu.add(R.string.menu_item_remove).setOnMenuItemClickListener(new RemoveListener(textView));
 	}
 
+	@Override
+	public void onResume()
+	{
+		super.onResume();
+		populateNoteLists();
+	}
+
 	public void addNoteList(View view)
 	{
-		AddDialog addDialog = new AddDialog();
+		AddNoteListDialog addDialog = new AddNoteListDialog();
 		addDialog.setOnDialogAcceptedListener(new AddNoteListener());
 		addDialog.show(getSupportFragmentManager(), "add note list");
 	}
 
 	private void populateNoteLists()
 	{
+		m_noteListsAdapter.clear();
+
+		File[] files = getNoteListFiles();
+		if (files == null)
+			return;
+
+		for (File file : files)
+		{
+			String name = file.getName();
+			name = name.substring(0, name.length() - NoteFile.cExtension.length());
+			m_noteListsAdapter.add(new ListItem(name));
+		}
+
+		sortNoteLists();
+	}
+
+	private boolean canAccessNoteLists()
+	{
+		String state = Environment.getExternalStorageState();
+		return state.equals(Environment.MEDIA_MOUNTED);
+	}
+
+	private File getNoteListsRoot()
+	{
+		if (!canAccessNoteLists())
+		{
+			ErrorDialog.show(this, R.string.error_inaccessible);
+			return null;
+		}
+
+		File root = getBaseContext().getExternalFilesDir(null);
+		if (root == null)
+		{
+			ErrorDialog.show(this, R.string.error_inaccessible);
+			return null;
+		}
+
+		return root;
+	}
+
+	private File[] getNoteListFiles()
+	{
+		final File root = getNoteListsRoot();
+		if (root == null)
+			return null;
+
+		return root.listFiles(new FilenameFilter()
+		{
+			@Override
+			public boolean accept(File dir, String filename)
+			{
+				return dir.equals(root) && filename.endsWith(NoteFile.cExtension);
+			}
+		});
 	}
 
 	private void sortNoteLists()
 	{
 		m_noteListsAdapter.sort(new ItemCompare());
-	}
-
-	private boolean canHaveNoteList(String name)
-	{
-		for (int i = 0; i < m_noteListsAdapter.getCount(); ++i)
-		{
-			if (m_noteListsAdapter.getItem(i).getName().equals(name))
-				return false;
-		}
-
-		return true;
 	}
 
 	private class ListItem
@@ -174,7 +237,7 @@ public class NoteListSelection extends AppCompatActivity
 		@Override
 		public void onClick(View view)
 		{
-			OpenDialog openDialog = new OpenDialog();
+			OpenNoteListDialog openDialog = new OpenNoteListDialog();
 			openDialog.setName(m_noteListView.getText().toString());
 			openDialog.setOnDialogAcceptedListener(new OpenNoteListener());
 			openDialog.show(getSupportFragmentManager(), "open note list");
@@ -188,6 +251,38 @@ public class NoteListSelection extends AppCompatActivity
 		@Override
 		public boolean onDialogAccepted(DialogFragment dialog)
 		{
+			OpenNoteListDialog openDialog = (OpenNoteListDialog)dialog;
+			String name = openDialog.getName();
+			String password = openDialog.getPassword();
+
+			File rootDir = getNoteListsRoot();
+			if (rootDir == null)
+				return false;
+
+			// Get the file for the new note list
+			File file = new File(rootDir, name + NoteFile.cExtension);
+			NoteFile.LoadResult loadResult = NoteFile.loadNotes(file, password);
+			switch (loadResult.result)
+			{
+				case Success:
+					break;
+				case EncryptionError:
+					ErrorDialog.show(NoteListSelection.this, R.string.error_bad_password);
+					return false;
+				default:
+				{
+					String message = getString(R.string.error_load).replace("%s", name);
+					ErrorDialog.show(NoteListSelection.this, message);
+					return true;
+				}
+			}
+
+			// Bring up the note list.
+			Intent intent = new Intent(NoteListSelection.this, NoteList.class);
+			intent.putExtra("FilePath", file);
+			intent.putExtra("Key", loadResult.key.getEncoded());
+			startActivity(intent);
+
 			return true;
 		}
 	}
@@ -197,16 +292,45 @@ public class NoteListSelection extends AppCompatActivity
 		@Override
 		public boolean onDialogAccepted(DialogFragment dialog)
 		{
-			String name = ((AddDialog)dialog).getName();
-			if (!canHaveNoteList(name))
+			AddNoteListDialog addDialog = (AddNoteListDialog)dialog;
+			String name = addDialog.getName();
+			String password = addDialog.getPassword();
+
+			File rootDir = getNoteListsRoot();
+			if (rootDir == null)
+				return false;
+
+			// Get the file for the new note list
+			File newFile = new File(rootDir, name + NoteFile.cExtension);
+			if (newFile.exists())
 			{
 				String message = getString(R.string.error_same_name).replace("%s", name);
 				ErrorDialog.show(NoteListSelection.this, message);
 				return false;
 			}
 
-			m_noteListsAdapter.add(new ListItem(name));
-			sortNoteLists();
+			// Save an empty note list.
+			byte[] salt = Crypto.random(Crypto.cSaltLenBytes);
+			SecretKey key = Crypto.generateKey(password, salt, Crypto.cDefaultKeyIterations);
+			NoteFile.Result result = NoteFile.writeNotes(newFile, new NoteSet(), salt, key);
+
+			if (result != NoteFile.Result.Success)
+			{
+				newFile.delete();
+				String message = getString(R.string.error_create).replace("%s", name);
+				ErrorDialog.show(NoteListSelection.this, message);
+				return false;
+			}
+
+			// Update the notes.
+			populateNoteLists();
+
+			// Bring up the note list.
+			Intent intent = new Intent(NoteListSelection.this, NoteList.class);
+			intent.putExtra("FilePath", newFile);
+			intent.putExtra("Key", key.getEncoded());
+			startActivity(intent);
+
 			return true;
 		}
 	}
@@ -221,9 +345,9 @@ public class NoteListSelection extends AppCompatActivity
 		@Override
 		public boolean onMenuItemClick(MenuItem item)
 		{
-			RenameDialog renameDialog = new RenameDialog();
+			RenameNoteListDialog renameDialog = new RenameNoteListDialog();
 			renameDialog.setInitialName(m_noteListView.getText().toString());
-			renameDialog.setOnDialogAcceptedListener(new RenameNoteListener(m_noteListView));
+			renameDialog.setOnDialogAcceptedListener(new RenameNoteListener());
 			renameDialog.show(getSupportFragmentManager(), "rename note list");
 			return true;
 		}
@@ -241,9 +365,9 @@ public class NoteListSelection extends AppCompatActivity
 		@Override
 		public boolean onMenuItemClick(MenuItem item)
 		{
-			RemoveDialog removeDialog = new RemoveDialog();
+			RemoveNoteListDialog removeDialog = new RemoveNoteListDialog();
 			removeDialog.setName(m_noteListView.getText().toString());
-			removeDialog.setOnDialogAcceptedListener(new RemoveNoteListener(m_noteListView));
+			removeDialog.setOnDialogAcceptedListener(new RemoveNoteListener());
 			removeDialog.show(getSupportFragmentManager(), "remove note list");
 			return true;
 		}
@@ -253,50 +377,97 @@ public class NoteListSelection extends AppCompatActivity
 
 	private class RenameNoteListener implements OnDialogAcceptedListener
 	{
-		public RenameNoteListener(TextView noteListView)
-		{
-			m_noteListView = noteListView;
-		}
-
 		@Override
 		public boolean onDialogAccepted(DialogFragment dialog)
 		{
-			String newName = ((RenameDialog)dialog).getNewName();
-			if (!canHaveNoteList(newName))
+			RenameNoteListDialog renameDialog = (RenameNoteListDialog)dialog;
+			String oldName = renameDialog.getInitialName();
+			String newName = renameDialog.getNewName();
+			String password = renameDialog.getPassword();
+
+			File rootDir = getNoteListsRoot();
+			if (rootDir == null)
+				return false;
+
+			// Ensure we can load the note list.
+			File oldFile = new File(rootDir, oldName + NoteFile.cExtension);
+			File newFile = new File(rootDir, newName + NoteFile.cExtension);
+
+			NoteFile.LoadResult loadResult = NoteFile.loadNotes(oldFile, password);
+			switch (loadResult.result)
+			{
+				case Success:
+					break;
+				case EncryptionError:
+					ErrorDialog.show(NoteListSelection.this, R.string.error_bad_password);
+					return false;
+				default:
+				{
+					String message = getString(R.string.error_create).replace("%s", oldName);
+					ErrorDialog.show(NoteListSelection.this, message);
+					return false;
+				}
+			}
+
+			if (newFile.exists())
 			{
 				String message = getString(R.string.error_same_name).replace("%s", newName);
 				ErrorDialog.show(NoteListSelection.this, message);
 				return false;
 			}
 
-			ListItem item = (ListItem)m_noteListView.getTag();
-			item.setName(newName);
-			m_noteListView.setText(newName);
-			sortNoteLists();
+			if (!oldFile.renameTo(newFile))
+			{
+				String message = getString(R.string.error_create).replace("%s", newName);
+				ErrorDialog.show(NoteListSelection.this, message);
+				return false;
+			}
+
+			populateNoteLists();
 			return true;
 		}
-
-		private TextView m_noteListView;
 	}
 
 	private class RemoveNoteListener implements OnDialogAcceptedListener
 	{
-		public RemoveNoteListener(TextView noteListView)
-		{
-			m_noteListView = noteListView;
-		}
-
 		@Override
 		public boolean onDialogAccepted(DialogFragment dialog)
 		{
-			m_noteListsAdapter.remove((ListItem) m_noteListView.getTag());
+			RemoveNoteListDialog removeDialog = (RemoveNoteListDialog)dialog;
+			String name = removeDialog.getName();
+			String password = removeDialog.getPassword();
+
+			File rootDir = getNoteListsRoot();
+			if (rootDir == null)
+				return false;
+
+			// Ensure we can load the note list.
+			File file = new File(rootDir, name + NoteFile.cExtension);
+			NoteFile.LoadResult loadResult = NoteFile.loadNotes(file, password);
+			String message = getString(R.string.error_remove).replace("%s", name);
+			switch (loadResult.result)
+			{
+				case Success:
+					break;
+				case EncryptionError:
+					ErrorDialog.show(NoteListSelection.this, R.string.error_bad_password);
+					return false;
+				default:
+					ErrorDialog.show(NoteListSelection.this, message);
+					return false;
+			}
+
+			if (!file.delete())
+			{
+				ErrorDialog.show(NoteListSelection.this, message);
+				return false;
+			}
+
+			populateNoteLists();
 			return true;
 		}
-
-		private TextView m_noteListView;
 	}
 
 
-	private ListView m_noteListsView;
 	private CustomAdapter m_noteListsAdapter;
 }
