@@ -32,6 +32,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.akb.notevault.dialogs.AddNoteListDialog;
+import com.akb.notevault.dialogs.ChangePasswordDialog;
 import com.akb.notevault.dialogs.ErrorDialog;
 import com.akb.notevault.dialogs.OnDialogAcceptedListener;
 import com.akb.notevault.dialogs.OpenNoteListDialog;
@@ -48,7 +49,7 @@ import java.util.Comparator;
 import javax.crypto.SecretKey;
 
 
-public class NoteListSelection extends AppCompatActivity
+public class NoteListSelectionActivity extends AppCompatActivity
 {
 
 	@Override
@@ -89,7 +90,7 @@ public class NoteListSelection extends AppCompatActivity
 		}
 		else if (id == R.id.action_help)
 		{
-			Intent intent = new Intent(this, HelpScreen.class);
+			Intent intent = new Intent(this, HelpActivity.class);
 			startActivity(intent);
 			return true;
 		}
@@ -102,6 +103,8 @@ public class NoteListSelection extends AppCompatActivity
 	{
 		TextView textView = (TextView)v;
 		menu.add(R.string.menu_item_rename).setOnMenuItemClickListener(new RenameListener(textView));
+		menu.add(R.string.menu_item_change_password).setOnMenuItemClickListener(
+			new ChangePasswordListener(textView));
 		menu.add(R.string.menu_item_remove).setOnMenuItemClickListener(new RemoveListener(textView));
 	}
 
@@ -267,18 +270,18 @@ public class NoteListSelection extends AppCompatActivity
 				case Success:
 					break;
 				case EncryptionError:
-					ErrorDialog.show(NoteListSelection.this, R.string.error_bad_password);
+					ErrorDialog.show(NoteListSelectionActivity.this, R.string.error_bad_password);
 					return false;
 				default:
 				{
 					String message = getString(R.string.error_load).replace("%s", name);
-					ErrorDialog.show(NoteListSelection.this, message);
+					ErrorDialog.show(NoteListSelectionActivity.this, message);
 					return true;
 				}
 			}
 
 			// Bring up the note list.
-			Intent intent = new Intent(NoteListSelection.this, NoteList.class);
+			Intent intent = new Intent(NoteListSelectionActivity.this, NoteListActivity.class);
 			intent.putExtra("FilePath", file);
 			intent.putExtra("Key", loadResult.key.getEncoded());
 			startActivity(intent);
@@ -305,20 +308,20 @@ public class NoteListSelection extends AppCompatActivity
 			if (newFile.exists())
 			{
 				String message = getString(R.string.error_same_name).replace("%s", name);
-				ErrorDialog.show(NoteListSelection.this, message);
+				ErrorDialog.show(NoteListSelectionActivity.this, message);
 				return false;
 			}
 
 			// Save an empty note list.
 			byte[] salt = Crypto.random(Crypto.cSaltLenBytes);
 			SecretKey key = Crypto.generateKey(password, salt, Crypto.cDefaultKeyIterations);
-			NoteFile.Result result = NoteFile.writeNotes(newFile, new NoteSet(), salt, key);
+			NoteFile.Result result = NoteFile.saveNotes(newFile, new NoteSet(), salt, key);
 
 			if (result != NoteFile.Result.Success)
 			{
 				newFile.delete();
 				String message = getString(R.string.error_create).replace("%s", name);
-				ErrorDialog.show(NoteListSelection.this, message);
+				ErrorDialog.show(NoteListSelectionActivity.this, message);
 				return false;
 			}
 
@@ -326,7 +329,7 @@ public class NoteListSelection extends AppCompatActivity
 			populateNoteLists();
 
 			// Bring up the note list.
-			Intent intent = new Intent(NoteListSelection.this, NoteList.class);
+			Intent intent = new Intent(NoteListSelectionActivity.this, NoteListActivity.class);
 			intent.putExtra("FilePath", newFile);
 			intent.putExtra("Key", key.getEncoded());
 			startActivity(intent);
@@ -349,26 +352,6 @@ public class NoteListSelection extends AppCompatActivity
 			renameDialog.setInitialName(m_noteListView.getText().toString());
 			renameDialog.setOnDialogAcceptedListener(new RenameNoteListener());
 			renameDialog.show(getSupportFragmentManager(), "rename note list");
-			return true;
-		}
-
-		private TextView m_noteListView;
-	}
-
-	private class RemoveListener implements MenuItem.OnMenuItemClickListener
-	{
-		public RemoveListener(TextView noteListView)
-		{
-			m_noteListView = noteListView;
-		}
-
-		@Override
-		public boolean onMenuItemClick(MenuItem item)
-		{
-			RemoveNoteListDialog removeDialog = new RemoveNoteListDialog();
-			removeDialog.setName(m_noteListView.getText().toString());
-			removeDialog.setOnDialogAcceptedListener(new RemoveNoteListener());
-			removeDialog.show(getSupportFragmentManager(), "remove note list");
 			return true;
 		}
 
@@ -399,12 +382,12 @@ public class NoteListSelection extends AppCompatActivity
 				case Success:
 					break;
 				case EncryptionError:
-					ErrorDialog.show(NoteListSelection.this, R.string.error_bad_password);
+					ErrorDialog.show(NoteListSelectionActivity.this, R.string.error_bad_password);
 					return false;
 				default:
 				{
 					String message = getString(R.string.error_create).replace("%s", oldName);
-					ErrorDialog.show(NoteListSelection.this, message);
+					ErrorDialog.show(NoteListSelectionActivity.this, message);
 					return false;
 				}
 			}
@@ -412,20 +395,40 @@ public class NoteListSelection extends AppCompatActivity
 			if (newFile.exists())
 			{
 				String message = getString(R.string.error_same_name).replace("%s", newName);
-				ErrorDialog.show(NoteListSelection.this, message);
+				ErrorDialog.show(NoteListSelectionActivity.this, message);
 				return false;
 			}
 
 			if (!oldFile.renameTo(newFile))
 			{
 				String message = getString(R.string.error_create).replace("%s", newName);
-				ErrorDialog.show(NoteListSelection.this, message);
+				ErrorDialog.show(NoteListSelectionActivity.this, message);
 				return false;
 			}
 
 			populateNoteLists();
 			return true;
 		}
+	}
+
+	private class RemoveListener implements MenuItem.OnMenuItemClickListener
+	{
+		public RemoveListener(TextView noteListView)
+		{
+			m_noteListView = noteListView;
+		}
+
+		@Override
+		public boolean onMenuItemClick(MenuItem item)
+		{
+			RemoveNoteListDialog removeDialog = new RemoveNoteListDialog();
+			removeDialog.setName(m_noteListView.getText().toString());
+			removeDialog.setOnDialogAcceptedListener(new RemoveNoteListener());
+			removeDialog.show(getSupportFragmentManager(), "remove note list");
+			return true;
+		}
+
+		private TextView m_noteListView;
 	}
 
 	private class RemoveNoteListener implements OnDialogAcceptedListener
@@ -450,16 +453,16 @@ public class NoteListSelection extends AppCompatActivity
 				case Success:
 					break;
 				case EncryptionError:
-					ErrorDialog.show(NoteListSelection.this, R.string.error_bad_password);
+					ErrorDialog.show(NoteListSelectionActivity.this, R.string.error_bad_password);
 					return false;
 				default:
-					ErrorDialog.show(NoteListSelection.this, message);
+					ErrorDialog.show(NoteListSelectionActivity.this, message);
 					return false;
 			}
 
 			if (!file.delete())
 			{
-				ErrorDialog.show(NoteListSelection.this, message);
+				ErrorDialog.show(NoteListSelectionActivity.this, message);
 				return false;
 			}
 
@@ -468,6 +471,71 @@ public class NoteListSelection extends AppCompatActivity
 		}
 	}
 
+	private class ChangePasswordListener implements MenuItem.OnMenuItemClickListener
+	{
+		public ChangePasswordListener(TextView noteListView)
+		{
+			m_noteListView = noteListView;
+		}
+
+		@Override
+		public boolean onMenuItemClick(MenuItem item)
+		{
+			ChangePasswordDialog changePasswordDialog = new ChangePasswordDialog();
+			changePasswordDialog.setName(m_noteListView.getText().toString());
+			changePasswordDialog.setOnDialogAcceptedListener(new ChangeNotePasswordListener());
+			changePasswordDialog.show(getSupportFragmentManager(), "change note list password");
+			return true;
+		}
+
+		private TextView m_noteListView;
+	}
+
+	private class ChangeNotePasswordListener implements OnDialogAcceptedListener
+	{
+		@Override
+		public boolean onDialogAccepted(DialogFragment dialog)
+		{
+			ChangePasswordDialog changePasswordDialog = (ChangePasswordDialog)dialog;
+			String name = changePasswordDialog.getName();
+			String currentPassword = changePasswordDialog.getCurrentPassword();
+			String newPassword = changePasswordDialog.getNewPassword();
+
+			File rootDir = getNoteListsRoot();
+			if (rootDir == null)
+				return false;
+
+			// First load the note list.
+			File file = new File(rootDir, name + NoteFile.cExtension);
+			NoteFile.LoadResult loadResult = NoteFile.loadNotes(file, currentPassword);
+			String message = getString(R.string.error_load).replace("%s", name);
+			switch (loadResult.result)
+			{
+				case Success:
+					break;
+				case EncryptionError:
+					ErrorDialog.show(NoteListSelectionActivity.this, R.string.error_bad_password);
+					return false;
+				default:
+					ErrorDialog.show(NoteListSelectionActivity.this, message);
+					return false;
+			}
+
+			// Save the note list with the new password.
+			byte[] salt = Crypto.random(Crypto.cSaltLenBytes);
+			SecretKey key = Crypto.generateKey(newPassword, salt, Crypto.cDefaultKeyIterations);
+			NoteFile.Result result = NoteFile.saveNotes(file, loadResult.notes, salt, key);
+
+			if (result != NoteFile.Result.Success)
+			{
+				message = getString(R.string.error_save).replace("%s", name);
+				ErrorDialog.show(NoteListSelectionActivity.this, message);
+				return false;
+			}
+
+			return true;
+		}
+	}
 
 	private CustomAdapter m_noteListsAdapter;
 }

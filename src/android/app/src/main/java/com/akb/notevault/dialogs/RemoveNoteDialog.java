@@ -29,7 +29,7 @@ import android.widget.TextView;
 
 import com.akb.notevault.R;
 
-public class OpenNoteListDialog extends DialogFragment
+public class RemoveNoteDialog extends DialogFragment
 {
 	public String getName()
 	{
@@ -39,13 +39,6 @@ public class OpenNoteListDialog extends DialogFragment
 	public void setName(String name)
 	{
 		m_name = name;
-	}
-
-	public String getPassword()
-	{
-		if (m_password == null)
-			return "";
-		return m_password.getText().toString();
 	}
 
 	public OnDialogAcceptedListener getOnDialogAcceptedListener()
@@ -64,13 +57,15 @@ public class OpenNoteListDialog extends DialogFragment
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 		LayoutInflater inflater = getActivity().getLayoutInflater();
 
-		View rootView = inflater.inflate(R.layout.open_note_list_dialog, null);
-		TextView openLabel = (TextView)rootView.findViewById(R.id.openLabel);
-		openLabel.setText(getString(R.string.label_open).replace("%s", m_name));
-		m_password = (EditText)rootView.findViewById(R.id.password);
+		String message = getString(R.string.label_confirm_remove);
+		message = message.replace("%s", m_name);
+
+		View rootView = inflater.inflate(R.layout.remove_note_dialog, null);
+		TextView removeLabel = (TextView)rootView.findViewById(R.id.removeLabel);
+		removeLabel.setText(message);
 
 		builder.setView(rootView);
-		builder.setPositiveButton(R.string.button_open, null);
+		builder.setPositiveButton(R.string.button_remove, null);
 		builder.setNegativeButton(R.string.button_cancel, null);
 
 		final AlertDialog alertDialog = builder.create();
@@ -85,14 +80,8 @@ public class OpenNoteListDialog extends DialogFragment
 					@Override
 					public void onClick(View view)
 					{
-						if (getPassword().isEmpty())
-						{
-							ErrorDialog.show(getActivity(), R.string.error_empty_password);
-							return;
-						}
-
 						if (m_acceptedListener == null ||
-							m_acceptedListener.onDialogAccepted(OpenNoteListDialog.this))
+							m_acceptedListener.onDialogAccepted(RemoveNoteDialog.this))
 						{
 							dismiss();
 						}
@@ -106,5 +95,4 @@ public class OpenNoteListDialog extends DialogFragment
 
 	private OnDialogAcceptedListener m_acceptedListener;
 	private String m_name;
-	private EditText m_password;
 }

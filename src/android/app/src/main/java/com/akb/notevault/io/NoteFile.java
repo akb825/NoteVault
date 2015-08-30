@@ -19,7 +19,6 @@ package com.akb.notevault.io;
 import com.akb.notevault.notes.Note;
 import com.akb.notevault.notes.NoteSet;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -88,44 +88,42 @@ public class NoteFile
 
 	public static LoadResult loadNotes(InputStream stream, String password)
 	{
-		LoadResult results = new LoadResult();
-		DataInputStream dataStream = new DataInputStream(stream);
+		LoadResult results = new LoadResult();;
 
 		try
 		{
 			//Read the header: magic string, version, salt, and initialization vector.
 			byte[] magicStringCheck = new byte[m_magicString.length()];
-			dataStream.read(magicStringCheck);
+			readBytes(stream, magicStringCheck);
 			if (!new String(magicStringCheck, m_charset).equals(m_magicString))
 			{
 				results.result = Result.InvalidFile;
 				return results;
 			}
 
-			int version = dataStream.readInt();
+			int version = readInt(stream);
 			if (version > cFileVersion)
 			{
 				results.result = Result.InvalidVersion;
 				return results;
 			}
 
-			int saltLen = dataStream.readInt();
+			int saltLen = readInt(stream);
 			byte[] salt = new byte[saltLen];
-			dataStream.read(salt);
+			readBytes(stream, salt);
 
 			int numIterations = Crypto.cDefaultKeyIterations;
 			//If an older file version, set the number of iterations based on that version.
 			SecretKey key = Crypto.generateKey(password, salt, numIterations);
 
-			int ivLen = dataStream.readInt();
+			int ivLen = readInt(stream);
 			byte[] iv = new byte[ivLen];
-			dataStream.read(iv);
+			readBytes(stream, iv);
 
 			//Main file. (encrypted)
 			Cipher cipher = Cipher.getInstance(m_encryptionAlgorithm);
 			cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
-			DataInputStream cryptoStream = new DataInputStream(new CipherInputStream(dataStream,
-				cipher));
+			CipherInputStream cryptoStream = new CipherInputStream(stream, cipher);
 
 			NoteSet notes = new NoteSet();
 			results.result = loadNotesImpl(cryptoStream, notes);
@@ -184,39 +182,37 @@ public class NoteFile
 	public static LoadResult loadNotes(InputStream stream, SecretKey key)
 	{
 		LoadResult results = new LoadResult();
-		DataInputStream dataStream = new DataInputStream(stream);
 
 		try
 		{
 			//Read the header: magic string, version, salt, and initialization vector.
 			byte[] magicStringCheck = new byte[m_magicString.length()];
-			dataStream.read(magicStringCheck);
+			readBytes(stream, magicStringCheck);
 			if (!new String(magicStringCheck, m_charset).equals(m_magicString))
 			{
 				results.result = Result.InvalidFile;
 				return results;
 			}
 
-			int version = dataStream.readInt();
+			int version = readInt(stream);
 			if (version > cFileVersion)
 			{
 				results.result = Result.InvalidVersion;
 				return results;
 			}
 
-			int saltLen = dataStream.readInt();
+			int saltLen = readInt(stream);
 			byte[] salt = new byte[saltLen];
-			dataStream.read(salt);
+			readBytes(stream, salt);
 
-			int ivLen = dataStream.readInt();
+			int ivLen = readInt(stream);
 			byte[] iv = new byte[ivLen];
-			dataStream.read(iv);
+			readBytes(stream, iv);
 
 			//Main file. (encrypted)
 			Cipher cipher = Cipher.getInstance(m_encryptionAlgorithm);
 			cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
-			DataInputStream cryptoStream = new DataInputStream(new CipherInputStream(dataStream,
-				cipher));
+			CipherInputStream cryptoStream = new CipherInputStream(stream, cipher);
 
 			NoteSet notes = new NoteSet();
 			results.result = loadNotesImpl(cryptoStream, notes);
@@ -244,13 +240,13 @@ public class NoteFile
 		return results;
 	}
 
-	private static Result loadNotesImpl(DataInputStream cryptoStream, NoteSet notes) throws IOException
+	private static Result loadNotesImpl(InputStream cryptoStream, NoteSet notes) throws IOException
 	{
 		//Read the magic string again to verify the correct key
 		byte[] magicStringCheck = new byte[m_magicString.length()];
 		try
 		{
-			cryptoStream.read(magicStringCheck);
+			readBytes(cryptoStream, magicStringCheck);
 		}
 		catch (IOException e)
 		{
@@ -261,10 +257,10 @@ public class NoteFile
 			return Result.EncryptionError;
 
 		//Read the notes
-		int numNotes = cryptoStream.readInt();
+		int numNotes = readInt(cryptoStream);
 		for (int i = 0; i < numNotes; ++i)
 		{
-			long id = cryptoStream.readLong();
+			long id = readLong(cryptoStream);
 
 			Note note = new Note(id);
 			note.setTitle(readString(cryptoStream));
@@ -277,7 +273,7 @@ public class NoteFile
 		return Result.Success;
 	}
 
-	public static Result writeNotes(File file, NoteSet notes, byte[] salt, SecretKey key)
+	public static Result saveNotes(File file, NoteSet notes, byte[] salt, SecretKey key)
 	{
 		FileOutputStream stream;
 		try
@@ -289,7 +285,7 @@ public class NoteFile
 			return Result.IoError;
 		}
 
-		Result result = writeNotes(stream, notes, salt, key);
+		Result result = saveNotes(stream, notes, salt, key);
 		try
 		{
 			stream.close();
@@ -299,7 +295,7 @@ public class NoteFile
 		return result;
 	}
 
-	public static Result writeNotes(OutputStream stream, NoteSet notes, byte[] salt, SecretKey key)
+	public static Result saveNotes(OutputStream stream, NoteSet notes, byte[] salt, SecretKey key)
 	{
 		DataOutputStream dataStream = new DataOutputStream(stream);
 
@@ -351,11 +347,39 @@ public class NoteFile
 		return Result.Success;
 	}
 
-	private static String readString(DataInputStream stream) throws IOException
+	private static String readString(InputStream stream) throws IOException
 	{
-		int strLen = stream.readInt();
+		int strLen = readInt(stream);
 		byte[] strBytes = new byte[strLen];
+		readBytes(stream, strBytes);
 		return new String(strBytes, m_charset);
+	}
+
+	private static int readBytes(InputStream stream, byte[] bytes) throws IOException
+	{
+		int readBytes = 0;
+		do
+		{
+			int thisRead = stream.read(bytes, readBytes, bytes.length - readBytes);;
+			if (thisRead <= 0)
+				break;
+			readBytes += thisRead;
+		} while (readBytes < bytes.length);
+		return readBytes;
+	}
+
+	private static int readInt(InputStream stream) throws IOException
+	{
+		byte[] intBytes = new byte[4];
+		readBytes(stream, intBytes);
+		return ByteBuffer.wrap(intBytes).getInt();
+	}
+
+	private static long readLong(InputStream stream) throws IOException
+	{
+		byte[] intBytes = new byte[8];
+		readBytes(stream, intBytes);
+		return ByteBuffer.wrap(intBytes).getLong();
 	}
 
 	private static void writeString(DataOutputStream stream, String string) throws IOException

@@ -16,7 +16,9 @@
 
 package com.akb.notevault.dialogs;
 
+import android.app.Activity;
 import android.app.Dialog;
+import android.text.ClipboardManager;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
@@ -25,53 +27,27 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 
 import com.akb.notevault.R;
+import com.akb.notevault.io.Crypto;
 
-public class OpenNoteListDialog extends DialogFragment
+public class GeneratePasswordDialog extends DialogFragment
 {
-	public String getName()
-	{
-		return m_name;
-	}
-
-	public void setName(String name)
-	{
-		m_name = name;
-	}
-
-	public String getPassword()
-	{
-		if (m_password == null)
-			return "";
-		return m_password.getText().toString();
-	}
-
-	public OnDialogAcceptedListener getOnDialogAcceptedListener()
-	{
-		return m_acceptedListener;
-	}
-
-	public void setOnDialogAcceptedListener(OnDialogAcceptedListener listener)
-	{
-		m_acceptedListener = listener;
-	}
-
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState)
 	{
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 		LayoutInflater inflater = getActivity().getLayoutInflater();
 
-		View rootView = inflater.inflate(R.layout.open_note_list_dialog, null);
-		TextView openLabel = (TextView)rootView.findViewById(R.id.openLabel);
-		openLabel.setText(getString(R.string.label_open).replace("%s", m_name));
+		View rootView = inflater.inflate(R.layout.password_generator_dialog, null);
+		m_numCharacters = (EditText)rootView.findViewById(R.id.numCharacters);
 		m_password = (EditText)rootView.findViewById(R.id.password);
+		generatePassword();
 
 		builder.setView(rootView);
-		builder.setPositiveButton(R.string.button_open, null);
-		builder.setNegativeButton(R.string.button_cancel, null);
+		builder.setPositiveButton(R.string.button_generate, null);
+		builder.setNegativeButton(R.string.button_close, null);
+		builder.setNeutralButton(R.string.button_copy, null);
 
 		final AlertDialog alertDialog = builder.create();
 		alertDialog.setOnShowListener(new DialogInterface.OnShowListener()
@@ -85,17 +61,21 @@ public class OpenNoteListDialog extends DialogFragment
 					@Override
 					public void onClick(View view)
 					{
-						if (getPassword().isEmpty())
-						{
-							ErrorDialog.show(getActivity(), R.string.error_empty_password);
-							return;
-						}
+						generatePassword();
+					}
+				});
 
-						if (m_acceptedListener == null ||
-							m_acceptedListener.onDialogAccepted(OpenNoteListDialog.this))
-						{
-							dismiss();
-						}
+				button = alertDialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+				button.setOnClickListener(new View.OnClickListener()
+				{
+					@Override
+					public void onClick(View view)
+					{
+						Activity activity = getActivity();
+						ClipboardManager clipboardManager =
+							(ClipboardManager)activity.getSystemService(Activity.CLIPBOARD_SERVICE);
+						String password = m_password.getText().toString();
+						clipboardManager.setText(password);
 					}
 				});
 			}
@@ -104,7 +84,26 @@ public class OpenNoteListDialog extends DialogFragment
 		return alertDialog;
 	}
 
-	private OnDialogAcceptedListener m_acceptedListener;
-	private String m_name;
+	private void generatePassword()
+	{
+		int numChars = Integer.parseInt(m_numCharacters.getText().toString());
+
+		int charOffset = (int)cFirstChar;
+		int numCharCodes = cLastChar - cFirstChar;
+
+		byte[] randomChars = Crypto.random(numChars);
+		char[] password = new char[numChars];
+		for (int i = 0; i < numChars; ++i)
+		{
+			int randomChar = Math.abs(randomChars[i]);
+			password[i] = (char)((randomChar % numCharCodes) + charOffset);
+		}
+		m_password.setText(password, 0, password.length);
+	}
+
+	private static final char cFirstChar = '!';
+	private static final char cLastChar = '~';
+
+	private EditText m_numCharacters;
 	private EditText m_password;
 }

@@ -26,7 +26,7 @@ import com.akb.notevault.io.NoteFile;
 import java.io.File;
 
 
-public class HelpScreen extends AppCompatActivity
+public class HelpActivity extends AppCompatActivity
 {
 
 	@Override

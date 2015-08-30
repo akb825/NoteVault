@@ -29,7 +29,7 @@ import android.widget.TextView;
 
 import com.akb.notevault.R;
 
-public class OpenNoteListDialog extends DialogFragment
+public class ChangePasswordDialog extends DialogFragment
 {
 	public String getName()
 	{
@@ -41,11 +41,18 @@ public class OpenNoteListDialog extends DialogFragment
 		m_name = name;
 	}
 
-	public String getPassword()
+	public String getCurrentPassword()
 	{
-		if (m_password == null)
+		if (m_currentPassword == null)
 			return "";
-		return m_password.getText().toString();
+		return m_currentPassword.getText().toString();
+	}
+
+	public String getNewPassword()
+	{
+		if (m_newPassword == null)
+			return "";
+		return m_newPassword.getText().toString();
 	}
 
 	public OnDialogAcceptedListener getOnDialogAcceptedListener()
@@ -64,13 +71,15 @@ public class OpenNoteListDialog extends DialogFragment
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 		LayoutInflater inflater = getActivity().getLayoutInflater();
 
-		View rootView = inflater.inflate(R.layout.open_note_list_dialog, null);
-		TextView openLabel = (TextView)rootView.findViewById(R.id.openLabel);
-		openLabel.setText(getString(R.string.label_open).replace("%s", m_name));
-		m_password = (EditText)rootView.findViewById(R.id.password);
+		View rootView = inflater.inflate(R.layout.change_password_dialog, null);
+		TextView title = (TextView)rootView.findViewById(R.id.changePasswordLabel);
+		title.setText(getString(R.string.label_change_password).replace("%s", m_name));
+		m_currentPassword = (EditText)rootView.findViewById(R.id.currentPassword);
+		m_newPassword = (EditText)rootView.findViewById(R.id.newPassword);
+		m_passwordConfirm = (EditText)rootView.findViewById(R.id.passwordConfirm);
 
 		builder.setView(rootView);
-		builder.setPositiveButton(R.string.button_open, null);
+		builder.setPositiveButton(R.string.button_change, null);
 		builder.setNegativeButton(R.string.button_cancel, null);
 
 		final AlertDialog alertDialog = builder.create();
@@ -85,14 +94,28 @@ public class OpenNoteListDialog extends DialogFragment
 					@Override
 					public void onClick(View view)
 					{
-						if (getPassword().isEmpty())
+						if (getName().isEmpty())
+						{
+							ErrorDialog.show(getActivity(), R.string.error_empty_name);
+							return;
+						}
+
+						String currentPassword = getCurrentPassword();
+						String newPassword = getNewPassword();
+						if (currentPassword.isEmpty() || newPassword.isEmpty())
 						{
 							ErrorDialog.show(getActivity(), R.string.error_empty_password);
 							return;
 						}
 
+						if (!newPassword.equals(m_passwordConfirm.getText().toString()))
+						{
+							ErrorDialog.show(getActivity(), R.string.error_password_mismatch);
+							return;
+						}
+
 						if (m_acceptedListener == null ||
-							m_acceptedListener.onDialogAccepted(OpenNoteListDialog.this))
+							m_acceptedListener.onDialogAccepted(ChangePasswordDialog.this))
 						{
 							dismiss();
 						}
@@ -106,5 +129,7 @@ public class OpenNoteListDialog extends DialogFragment
 
 	private OnDialogAcceptedListener m_acceptedListener;
 	private String m_name;
-	private EditText m_password;
+	private EditText m_currentPassword;
+	private EditText m_newPassword;
+	private EditText m_passwordConfirm;
 }

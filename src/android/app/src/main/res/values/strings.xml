@@ -3,38 +3,51 @@
 	<string name="copyright">Copyright &amp;copy; 2015 Aaron Barany</string>
 
 	<string name="action_refresh">Refresh</string>
-	<string name="action_reload">Reload</string>
 	<string name="action_help">Help</string>
+	<string name="action_password_generator">Generate Password</string>
+
 	<string name="button_add">Add</string>
-	<string name="button_remove">Remove</string>
-	<string name="button_open">Open</string>
+	<string name="button_save">Save</string>
 	<string name="button_close">Close</string>
+	<string name="button_remove">Delete</string>
+	<string name="button_open">Open</string>
 	<string name="button_rename">Rename</string>
-	<string name="button_cancel">Cancel</string>
+	<string name="button_change">Change</string>
 	<string name="button_ok">OK</string>
+	<string name="button_cancel">Cancel</string>
+	<string name="button_generate">Generate</string>
+	<string name="button_copy">Copy</string>
 
 	<string name="title_note_lists">Note Lists</string>
 	<string name="title_help_screen">About Note Vault</string>
-	<string name="title_rename">New name</string>
 
 	<string name="label_name">Name</string>
 	<string name="label_password">Password</string>
+	<string name="label_current_password">Current password</string>
+	<string name="label_new_password">New password</string>
 	<string name="label_password_confirm">Confirm password</string>
-	<string name="label_confirm_remove">Do you wish to remove %s?</string>
+	<string name="label_open">Open %s</string>
+	<string name="label_change_password">Change password for %s</string>
+	<string name="label_confirm_remove">Do you wish to delete %s?</string>
+	<string name="label_num_characters"># characters: </string>
+
+	<string name="default_num_characters">12</string>
 
 	<string name="error_empty_name">Please enter a name.</string>
 	<string name="error_same_name">Item of name %s already exists.</string>
 	<string name="error_create">Error creating %s.</string>
 	<string name="error_load">Error loading %s.</string>
+	<string name="error_save">Error saving %s.</string>
 	<string name="error_empty_password">Please enter a password.</string>
 	<string name="error_password_mismatch">Passwords don\'t match.</string>
 	<string name="error_bad_password">Incorrect password.</string>
-	<string name="error_remove">Error removing %s.</string>
+	<string name="error_remove">Error deleting %s.</string>
 	<string name="error_inaccessible">Can\'t access storage.</string>
 
 	<string name="menu_item_open">Open</string>
 	<string name="menu_item_rename">Rename</string>
-	<string name="menu_item_remove">Remove</string>
+	<string name="menu_item_change_password">Change Password</string>
+	<string name="menu_item_remove">Delete</string>
 
 	<string name="help_about">Securely store notes without relying on an online service.</string>
 	<string name="help_transfer" formatted="false">
@@ -47,5 +60,6 @@
 	</string>
 
     <string name="title_activity_note_list">NoteList</string>
+    <string name="title_activity_note">NoteActivity</string>
 
 </resources>
