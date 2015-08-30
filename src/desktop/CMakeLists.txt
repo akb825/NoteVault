@@ -33,6 +33,9 @@ set(SRC_LIST
 	ui/ConfirmCloseDialog.cpp
 	ui/ConfirmCloseDialog.h
 	ui/ConfirmCloseDialog.ui
+	ui/GeneratePasswordDialog.cpp
+	ui/GeneratePasswordDialog.h
+	ui/GeneratePasswordDialog.ui
 	ui/MainWindow.cpp
 	ui/MainWindow.h
 	ui/MainWindow.ui
@@ -54,6 +57,7 @@ find_package(OpenSSL REQUIRED)
 
 qt5_wrap_ui(UI_HEADERS ui/AboutDialog.ui)
 qt5_wrap_ui(UI_HEADERS ui/ConfirmCloseDialog.ui)
+qt5_wrap_ui(UI_HEADERS ui/GeneratePasswordDialog.ui)
 qt5_wrap_ui(UI_HEADERS ui/OpenPasswordDialog.ui)
 qt5_wrap_ui(UI_HEADERS ui/MainWindow.ui)
 qt5_wrap_ui(UI_HEADERS ui/SavePasswordDialog.ui)

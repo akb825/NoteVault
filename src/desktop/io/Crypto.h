@@ -1,3 +1,4 @@
+#pragma once
 /*
  * Copyright 2015 Aaron Barany
  *
@@ -6,7 +7,7 @@
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
-
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,7 +31,9 @@ public:
 	static const unsigned int cBlockLenBytes = cBlockLen/8;
 	static const unsigned int cSaltLen = 128;
 	static const unsigned int cSaltLenBytes = cSaltLen/8;
-	static const unsigned int cDefaultKeyIterations = 100000;
+	static const unsigned int cDefaultKeyIterations = 30000;
+
+	static const unsigned int cVer0KeyIterations = 100000;
 
 	static void initialize();
 	static std::vector<uint8_t> generateKey(const std::string& password,

@@ -6,7 +6,7 @@
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
-
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -278,6 +278,16 @@ public class NoteListSelectionActivity extends AppCompatActivity
 					ErrorDialog.show(NoteListSelectionActivity.this, message);
 					return true;
 				}
+			}
+
+			// NOTE: The number of key iterations might have changed. Re-save the file just in case.
+			NoteFile.Result result = NoteFile.saveNotes(file, loadResult.notes, loadResult.salt,
+				loadResult.key);
+			if (result != NoteFile.Result.Success)
+			{
+				String message = getString(R.string.error_load).replace("%s", name);
+				ErrorDialog.show(NoteListSelectionActivity.this, message);
+				return false;
 			}
 
 			// Bring up the note list.

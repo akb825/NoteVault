@@ -57,6 +57,9 @@
 		%f
 		&lt;/tt&gt;&lt;br&gt;&lt;br&gt;
 		From there, you can move %ext files to and from this device.
+		&lt;br&gt;&lt;br&gt;
+		Due to an issue with Android, some files may not show up on your computer. If this happens,
+		reboot your device.
 	</string>
 
     <string name="title_activity_note_list">NoteList</string>

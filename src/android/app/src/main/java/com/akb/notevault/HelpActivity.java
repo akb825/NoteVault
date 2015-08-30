@@ -6,7 +6,7 @@
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
-
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -46,7 +46,13 @@ public class HelpActivity extends AppCompatActivity
 		String transfer = getString(R.string.help_transfer);
 		File rootPath = getBaseContext().getExternalFilesDir(null);
 		if (rootPath != null)
-			transfer = transfer.replace("%f", rootPath.getPath());
+		{
+			String rootPathStr = rootPath.getPath();
+			int androidFolderPos = rootPathStr.indexOf("Android");
+			if (androidFolderPos >= 0)
+				rootPathStr = rootPathStr.substring(androidFolderPos);
+			transfer = transfer.replace("%f", rootPathStr);
+		}
 		transfer = transfer.replace("%ext", NoteFile.cExtension);
 
 		helpHtml = helpHtml +

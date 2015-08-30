@@ -6,7 +6,7 @@
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
-
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -42,7 +42,7 @@ import javax.crypto.spec.IvParameterSpec;
 
 public class NoteFile
 {
-	public static final int cFileVersion = 0;
+	public static final int cFileVersion = 1;
 	public static final String cExtension = ".secnote";
 
 	public enum Result
@@ -101,6 +101,9 @@ public class NoteFile
 				return results;
 			}
 
+			// Read null terminator.
+			stream.read();
+
 			int version = readInt(stream);
 			if (version > cFileVersion)
 			{
@@ -114,6 +117,8 @@ public class NoteFile
 
 			int numIterations = Crypto.cDefaultKeyIterations;
 			//If an older file version, set the number of iterations based on that version.
+			if (version == 0)
+				numIterations = Crypto.cVer0KeyIterations;
 			SecretKey key = Crypto.generateKey(password, salt, numIterations);
 
 			int ivLen = readInt(stream);
@@ -194,6 +199,9 @@ public class NoteFile
 				return results;
 			}
 
+			// Read null terminator.
+			stream.read();
+
 			int version = readInt(stream);
 			if (version > cFileVersion)
 			{
@@ -256,6 +264,9 @@ public class NoteFile
 		if (!new String(magicStringCheck, m_charset).equals(m_magicString))
 			return Result.EncryptionError;
 
+		// Read null terminator.
+		cryptoStream.read();
+
 		//Read the notes
 		int numNotes = readInt(cryptoStream);
 		for (int i = 0; i < numNotes; ++i)
@@ -303,6 +314,7 @@ public class NoteFile
 		{
 			//Write the header: magic string, version, salt, and initialization vector.
 			dataStream.write(m_magicString.getBytes(m_charset));
+			dataStream.write(0);
 			dataStream.writeInt(cFileVersion);
 			dataStream.writeInt(salt.length);
 			dataStream.write(salt);
@@ -320,6 +332,7 @@ public class NoteFile
 
 			//write the magic string again for verifying the correct key
 			cryptoStream.write(m_magicString.getBytes(m_charset));
+			cryptoStream.write(0);
 
 			//write the notes
 			cryptoStream.writeInt(notes.size());
@@ -360,7 +373,7 @@ public class NoteFile
 		int readBytes = 0;
 		do
 		{
-			int thisRead = stream.read(bytes, readBytes, bytes.length - readBytes);;
+			int thisRead = stream.read(bytes, readBytes, bytes.length - readBytes);
 			if (thisRead <= 0)
 				break;
 			readBytes += thisRead;

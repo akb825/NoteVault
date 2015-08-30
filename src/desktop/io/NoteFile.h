@@ -1,3 +1,4 @@
+#pragma once
 /*
  * Copyright 2015 Aaron Barany
  *
@@ -6,7 +7,7 @@
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
-
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,7 +29,7 @@ class NoteSet;
 class NoteFile
 {
 public:
-	static const uint32_t cFileVersion = 0;
+	static const uint32_t cFileVersion = 1;
 
 	enum class Result
 	{

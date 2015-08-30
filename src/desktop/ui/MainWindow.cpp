@@ -6,7 +6,7 @@
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
-
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,6 +20,7 @@
 #include "ConfirmCloseDialog.h"
 #include "OpenPasswordDialog.h"
 #include "SavePasswordDialog.h"
+#include "GeneratePasswordDialog.h"
 #include "io/Crypto.h"
 #include "io/FileIStream.h"
 #include "io/FileOStream.h"
@@ -45,7 +46,7 @@ struct MainWindow::ChildItems
 {
 	ChildItems(QWidget* parent)
 		: aboutDialog(parent), confirmCloseDialog(parent), openPasswordDialog(parent),
-		savePasswordDialog(parent), fileDialog(parent)
+		savePasswordDialog(parent), generatePasswordDialog(parent), fileDialog(parent)
 	{
 	}
 
@@ -53,6 +54,7 @@ struct MainWindow::ChildItems
 	ConfirmCloseDialog confirmCloseDialog;
 	OpenPasswordDialog openPasswordDialog;
 	SavePasswordDialog savePasswordDialog;
+	GeneratePasswordDialog generatePasswordDialog;
 	QFileDialog fileDialog;
 	QUndoStack undoStack;
 	QTimer timer;
@@ -239,6 +241,8 @@ MainWindow::MainWindow()
 	QObject::connect(m_impl->actionSelectAll, SIGNAL(triggered()), this, SLOT(onSelectAll()));
 	QObject::connect(m_impl->actionAddNote, SIGNAL(triggered()), this, SLOT(onAddNote()));
 	QObject::connect(m_impl->actionRemoveNote, SIGNAL(triggered()), this, SLOT(onRemoveNote()));
+	QObject::connect(m_impl->actionPasswordGenerator, SIGNAL(triggered()),
+		this, SLOT(onPasswordGenerator()));
 	QObject::connect(m_impl->actionAbout, SIGNAL(triggered()), this, SLOT(onAbout()));
 
 	// Buttons
@@ -450,6 +454,14 @@ void MainWindow::onAbout()
 	m_children->aboutDialog.show();
 	m_children->aboutDialog.raise();
 	m_children->aboutDialog.activateWindow();
+}
+
+void MainWindow::onPasswordGenerator()
+{
+	m_children->generatePasswordDialog.generatePassword();
+	m_children->generatePasswordDialog.show();
+	m_children->generatePasswordDialog.raise();
+	m_children->generatePasswordDialog.activateWindow();
 }
 
 void MainWindow::onNoteRenamed(QListWidgetItem* item)

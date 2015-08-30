@@ -1,3 +1,4 @@
+#pragma once
 /*
  * Copyright 2015 Aaron Barany
  *
@@ -14,43 +15,28 @@
  * limitations under the License.
  */
 
-package com.akb.notevault.notes;
+#include <QMainWindow>
 
-import java.util.HashSet;
-
-public class IdFactory
-{
-	public IdFactory()
-	{
-		m_maxId = 0;
-		m_ids = new HashSet<>();
-	}
-
-	public boolean addId(long id)
-	{
-		if (!m_ids.add(id))
-			return false;
-		m_maxId = Math.max(m_maxId, id + 1);
-		return true;
-	}
-
-	public long addId()
-	{
-		long newId = m_maxId++;
-		m_ids.add(newId);
-		return newId;
-	}
-
-	public boolean removeId(long id)
-	{
-		return m_ids.remove(id);
-	}
-
-	public void clear()
-	{
-		m_ids.clear();
-	}
-
-	private long m_maxId;
-	private HashSet<Long> m_ids;
+namespace Ui {
+class GeneratePasswordDialog;
 }
+
+namespace NoteVault
+{
+
+class GeneratePasswordDialog : public QMainWindow
+{
+	Q_OBJECT
+
+public:
+	explicit GeneratePasswordDialog(QWidget *parent = 0);
+	~GeneratePasswordDialog();
+
+public Q_SLOTS:
+	void generatePassword();
+
+private:
+	Ui::GeneratePasswordDialog *m_impl;
+};
+
+} // namespace NoteVault
