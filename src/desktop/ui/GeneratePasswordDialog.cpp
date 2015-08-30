@@ -15,7 +15,7 @@
  */
 
 #include "GeneratePasswordDialog.h"
-#include "io/Crypto.h""
+#include "io/Crypto.h"
 
 #include "ui_GeneratePasswordDialog.h"
 #include "GeneratePasswordDialog.moc"
