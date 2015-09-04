@@ -39,6 +39,10 @@
 #include "ui_MainWindow.h"
 #include "MainWindow.moc"
 
+#ifdef _WIN32
+#define strcasecmp _stricmp
+#endif
+
 namespace NoteVault
 {
 
@@ -226,6 +230,21 @@ MainWindow::MainWindow()
 
 	updateForDeselection();
 	updateMenuItems();
+
+	// Set standard shortcuts
+	m_impl->actionNew->setShortcut(QKeySequence::New);
+	m_impl->actionOpen->setShortcut(QKeySequence::Open);
+	m_impl->actionSave->setShortcut(QKeySequence::Save);
+	//m_impl->actionSaveAs->setShortcut(QKeySequence::SaveAs);
+	//m_impl->actionExit->setShortcut(QKeySequence::Quit);
+
+	m_impl->actionUndo->setShortcut(QKeySequence::Undo);
+	m_impl->actionRedo->setShortcut(QKeySequence::Redo);
+	m_impl->actionCut->setShortcut(QKeySequence::Cut);
+	m_impl->actionCopy->setShortcut(QKeySequence::Copy);
+	m_impl->actionPaste->setShortcut(QKeySequence::Paste);
+	m_impl->actionDelete->setShortcut(QKeySequence::Delete);
+	m_impl->actionSelectAll->setShortcut(QKeySequence::SelectAll);
 
 	// Menu items
 	QObject::connect(m_impl->actionNew, SIGNAL(triggered()), this, SLOT(onNew()));

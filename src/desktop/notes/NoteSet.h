@@ -153,7 +153,7 @@ private:
 template <typename Pred>
 void NoteSet::sort(const Pred& pred)
 {
-	std::sort(m_order.begin(), m_order.end(), [this, &pred] (size_t left, size_t right) -> bool
+	std::sort(m_order.begin(), m_order.end(), [this, &pred] (uint64_t left, uint64_t right) -> bool
 		{
 			return pred(m_notes.find(left)->second, m_notes.find(right)->second);
 		});
@@ -181,31 +181,43 @@ inline NoteSet::iterator::reference NoteSet::iterator::operator[](difference_typ
 
 inline bool NoteSet::iterator::operator==(const iterator& other) const
 {
+	if (!m_notes || !other.m_notes)
+		return m_notes == other.m_notes;
 	return m_iter == other.m_iter;
 }
 
 inline bool NoteSet::iterator::operator!=(const iterator& other) const
 {
+	if (!m_notes || !other.m_notes)
+		return m_notes != other.m_notes;
 	return m_iter != other.m_iter;
 }
 
 inline bool NoteSet::iterator::operator<(const iterator& other) const
 {
+	if (!m_notes || !other.m_notes)
+		return m_notes < other.m_notes;
 	return m_iter < other.m_iter;
 }
 
 inline bool NoteSet::iterator::operator<=(const iterator& other) const
 {
+	if (!m_notes || !other.m_notes)
+		return m_notes <= other.m_notes;
 	return m_iter <= other.m_iter;
 }
 
 inline bool NoteSet::iterator::operator>(const iterator& other) const
 {
+	if (!m_notes || !other.m_notes)
+		return m_notes > other.m_notes;
 	return m_iter > other.m_iter;
 }
 
 inline bool NoteSet::iterator::operator>=(const iterator& other) const
 {
+	if (!m_notes || !other.m_notes)
+		return m_notes >= other.m_notes;
 	return m_iter >= other.m_iter;
 }
 

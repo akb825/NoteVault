@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 
 if (UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+elseif (WIN32)
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
 set(SRC_LIST
@@ -64,6 +66,7 @@ qt5_wrap_ui(UI_HEADERS ui/SavePasswordDialog.ui)
 
 add_executable(${PROJECT_NAME} ${SRC_LIST} ${UI_HEADERS})
 target_link_libraries(${PROJECT_NAME} Qt5::Widgets ${OPENSSL_LIBRARIES})
+include_directories(${OPENSSL_INCLUDE_DIR})
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/linux/icons/

@@ -15,6 +15,7 @@
  */
 
 #include "IdFactory.h"
+#include <algorithm>
 
 namespace NoteVault
 {
