@@ -1,12 +1,6 @@
 project(notevault)
 cmake_minimum_required(VERSION 2.8)
 
-if (UNIX)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
-elseif (WIN32)
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-endif()
-
 set(SRC_LIST
 	main.cpp
 	Version.h
@@ -50,6 +44,14 @@ set(SRC_LIST
 	ui/SavePasswordDialog.ui
 	)
 
+if (UNIX)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+elseif (WIN32)
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+	set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/windows)
+	set(SRC_LIST ${SRC_LIST} ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/windows/icon.rc)
+endif()
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -68,8 +70,20 @@ add_executable(${PROJECT_NAME} ${SRC_LIST} ${UI_HEADERS})
 target_link_libraries(${PROJECT_NAME} Qt5::Widgets ${OPENSSL_LIBRARIES})
 include_directories(${OPENSSL_INCLUDE_DIR})
 
+set(CPACK_PACKAGE_NAME NoteVault)
+set(CPACK_PACKAGE_VENDOR "Aaron Barany")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Store notes securely without relying on an online service.")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY NoteVault)
+set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY NoteVault)
+set(CPACK_PACKAGE_VERSION_MAJOR 1)
+set(CPACK_PACKAGE_VERSION_MINOR 0)
+set(CPACK_PACKAGE_VERSION_PATCH 0)
+set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/../license.txt)
+set(CPACK_PACKAGE_EXECUTABLES ${PROJECT_NAME};NoteVault)
+
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/linux/icons/
-	DESTINATION share/icons/hicolor)
-install(FILES notevault.desktop DESTINATION share/applications)
-install(FILES secure-note.xml DESTINATION share/mime/packages)
+if (UNIX)
+	include(install/linux/Install.cmake)
+elseif (WIN32)
+	include(install/windows/Install.cmake)
+endif()
