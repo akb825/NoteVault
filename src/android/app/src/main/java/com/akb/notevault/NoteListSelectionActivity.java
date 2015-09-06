@@ -18,6 +18,7 @@ package com.akb.notevault;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Environment;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
@@ -34,6 +35,7 @@ import android.widget.TextView;
 import com.akb.notevault.dialogs.AddNoteListDialog;
 import com.akb.notevault.dialogs.ChangePasswordDialog;
 import com.akb.notevault.dialogs.ErrorDialog;
+import com.akb.notevault.dialogs.LoadingDialog;
 import com.akb.notevault.dialogs.OnDialogAcceptedListener;
 import com.akb.notevault.dialogs.OpenNoteListDialog;
 import com.akb.notevault.dialogs.RemoveNoteListDialog;
@@ -149,26 +151,18 @@ public class NoteListSelectionActivity extends AppCompatActivity
 	private File getNoteListsRoot()
 	{
 		if (!canAccessNoteLists())
-		{
-			ErrorDialog.show(this, R.string.error_inaccessible);
 			return null;
-		}
-
-		File root = getBaseContext().getExternalFilesDir(null);
-		if (root == null)
-		{
-			ErrorDialog.show(this, R.string.error_inaccessible);
-			return null;
-		}
-
-		return root;
+		return getBaseContext().getExternalFilesDir(null);
 	}
 
 	private File[] getNoteListFiles()
 	{
 		final File root = getNoteListsRoot();
 		if (root == null)
+		{
+			ErrorDialog.show(this, R.string.error_inaccessible);
 			return null;
+		}
 
 		return root.listFiles(new FilenameFilter()
 		{
@@ -254,50 +248,84 @@ public class NoteListSelectionActivity extends AppCompatActivity
 		@Override
 		public boolean onDialogAccepted(DialogFragment dialog)
 		{
-			OpenNoteListDialog openDialog = (OpenNoteListDialog)dialog;
-			String name = openDialog.getName();
-			String password = openDialog.getPassword();
-
-			File rootDir = getNoteListsRoot();
-			if (rootDir == null)
+			if (m_task != null)
 				return false;
 
-			// Get the file for the new note list
-			File file = new File(rootDir, name + NoteFile.cExtension);
-			NoteFile.LoadResult loadResult = NoteFile.loadNotes(file, password);
-			switch (loadResult.result)
-			{
-				case Success:
-					break;
-				case EncryptionError:
-					ErrorDialog.show(NoteListSelectionActivity.this, R.string.error_bad_password);
-					return false;
-				default:
-				{
-					String message = getString(R.string.error_load).replace("%s", name);
-					ErrorDialog.show(NoteListSelectionActivity.this, message);
-					return true;
-				}
-			}
-
-			// NOTE: The number of key iterations might have changed. Re-save the file just in case.
-			NoteFile.Result result = NoteFile.saveNotes(file, loadResult.notes, loadResult.salt,
-				loadResult.key);
-			if (result != NoteFile.Result.Success)
-			{
-				String message = getString(R.string.error_load).replace("%s", name);
-				ErrorDialog.show(NoteListSelectionActivity.this, message);
-				return false;
-			}
-
-			// Bring up the note list.
-			Intent intent = new Intent(NoteListSelectionActivity.this, NoteListActivity.class);
-			intent.putExtra("FilePath", file);
-			intent.putExtra("Key", loadResult.key.getEncoded());
-			startActivity(intent);
-
-			return true;
+			m_task = new Task();
+			m_task.execute((OpenNoteListDialog)dialog);
+			return false;
 		}
+
+		private class Task extends AsyncTask<OpenNoteListDialog, Object, String>
+		{
+			@Override
+			protected void onPreExecute()
+			{
+				m_loadingDialog.show(getSupportFragmentManager(), "loading dialog");
+			}
+
+			@Override
+			protected String doInBackground(OpenNoteListDialog... dialog)
+			{
+				m_dialog = dialog[0];
+				String name = m_dialog.getName();
+				String password = m_dialog.getPassword();
+
+				File rootDir = getNoteListsRoot();
+				if (rootDir == null)
+					return getString(R.string.error_inaccessible);
+
+				// Get the file for the new note list
+				m_file = new File(rootDir, name + NoteFile.cExtension);
+				NoteFile.LoadResult loadResult = NoteFile.loadNotes(m_file, password);
+				String message = getString(R.string.error_load).replace("%s", name);
+				switch (loadResult.result)
+				{
+					case Success:
+						break;
+					case EncryptionError:
+						return getString(R.string.error_bad_password);
+					default:
+						return message;
+				}
+
+				m_key = loadResult.key;
+
+				// NOTE: The number of key iterations might have changed. Re-save the file just in case.
+				NoteFile.Result result = NoteFile.saveNotes(m_file, loadResult.notes,
+					loadResult.salt, m_key);
+				if (result != NoteFile.Result.Success)
+					return message;
+
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(String result)
+			{
+				m_loadingDialog.dismiss();
+				if (result == null)
+				{
+					// Bring up the note list.
+					Intent intent = new Intent(NoteListSelectionActivity.this, NoteListActivity.class);
+					intent.putExtra("FilePath", m_file);
+					intent.putExtra("Key", m_key.getEncoded());
+					startActivity(intent);
+
+					m_dialog.dismiss();
+				}
+				else
+					ErrorDialog.show(NoteListSelectionActivity.this, result);
+				m_task = null;
+			}
+
+			private File m_file;
+			private SecretKey m_key;
+			private LoadingDialog m_loadingDialog = new LoadingDialog();
+			private OpenNoteListDialog m_dialog;
+		}
+
+		private Task m_task;
 	}
 
 	private class AddNoteListener implements OnDialogAcceptedListener
@@ -305,47 +333,81 @@ public class NoteListSelectionActivity extends AppCompatActivity
 		@Override
 		public boolean onDialogAccepted(DialogFragment dialog)
 		{
-			AddNoteListDialog addDialog = (AddNoteListDialog)dialog;
-			String name = addDialog.getName();
-			String password = addDialog.getPassword();
-
-			File rootDir = getNoteListsRoot();
-			if (rootDir == null)
+			if (m_task != null)
 				return false;
 
-			// Get the file for the new note list
-			File newFile = new File(rootDir, name + NoteFile.cExtension);
-			if (newFile.exists())
-			{
-				String message = getString(R.string.error_same_name).replace("%s", name);
-				ErrorDialog.show(NoteListSelectionActivity.this, message);
-				return false;
-			}
-
-			// Save an empty note list.
-			byte[] salt = Crypto.random(Crypto.cSaltLenBytes);
-			SecretKey key = Crypto.generateKey(password, salt, Crypto.cDefaultKeyIterations);
-			NoteFile.Result result = NoteFile.saveNotes(newFile, new NoteSet(), salt, key);
-
-			if (result != NoteFile.Result.Success)
-			{
-				newFile.delete();
-				String message = getString(R.string.error_create).replace("%s", name);
-				ErrorDialog.show(NoteListSelectionActivity.this, message);
-				return false;
-			}
-
-			// Update the notes.
-			populateNoteLists();
-
-			// Bring up the note list.
-			Intent intent = new Intent(NoteListSelectionActivity.this, NoteListActivity.class);
-			intent.putExtra("FilePath", newFile);
-			intent.putExtra("Key", key.getEncoded());
-			startActivity(intent);
-
-			return true;
+			m_task = new Task();
+			m_task.execute((AddNoteListDialog)dialog);
+			return false;
 		}
+
+		private class Task extends AsyncTask<AddNoteListDialog, Object, String>
+		{
+			@Override
+			protected void onPreExecute()
+			{
+				m_loadingDialog.show(getSupportFragmentManager(), "loading dialog");
+			}
+
+			@Override
+			protected String doInBackground(AddNoteListDialog... dialog)
+			{
+				m_dialog = dialog[0];
+				String name = m_dialog.getName();
+				String password = m_dialog.getPassword();
+
+				File rootDir = getNoteListsRoot();
+				if (rootDir == null)
+					return getString(R.string.error_inaccessible);
+
+				// Get the file for the new note list
+				m_file = new File(rootDir, name + NoteFile.cExtension);
+				if (m_file.exists())
+					return getString(R.string.error_same_name).replace("%s", name);
+
+				// Save an empty note list.
+				byte[] salt = Crypto.random(Crypto.cSaltLenBytes);
+				m_key = Crypto.generateKey(password, salt, Crypto.cDefaultKeyIterations);
+				NoteFile.Result result = NoteFile.saveNotes(m_file, new NoteSet(), salt, m_key);
+
+				if (result != NoteFile.Result.Success)
+				{
+					m_file.delete();
+					return getString(R.string.error_create).replace("%s", name);
+				}
+
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(String result)
+			{
+				m_loadingDialog.dismiss();
+				if (result == null)
+				{
+					// Update the notes.
+					populateNoteLists();
+
+					// Bring up the note list.
+					Intent intent = new Intent(NoteListSelectionActivity.this, NoteListActivity.class);
+					intent.putExtra("FilePath", m_file);
+					intent.putExtra("Key", m_key.getEncoded());
+					startActivity(intent);
+
+					m_dialog.dismiss();
+				}
+				else
+					ErrorDialog.show(NoteListSelectionActivity.this, result);
+				m_task = null;
+			}
+
+			private File m_file;
+			private SecretKey m_key;
+			private LoadingDialog m_loadingDialog = new LoadingDialog();
+			private AddNoteListDialog m_dialog;
+		}
+
+		private Task m_task;
 	}
 
 	private class RenameListener implements MenuItem.OnMenuItemClickListener
@@ -373,52 +435,77 @@ public class NoteListSelectionActivity extends AppCompatActivity
 		@Override
 		public boolean onDialogAccepted(DialogFragment dialog)
 		{
-			RenameNoteListDialog renameDialog = (RenameNoteListDialog)dialog;
-			String oldName = renameDialog.getInitialName();
-			String newName = renameDialog.getNewName();
-			String password = renameDialog.getPassword();
-
-			File rootDir = getNoteListsRoot();
-			if (rootDir == null)
+			if (m_task != null)
 				return false;
 
-			// Ensure we can load the note list.
-			File oldFile = new File(rootDir, oldName + NoteFile.cExtension);
-			File newFile = new File(rootDir, newName + NoteFile.cExtension);
-
-			NoteFile.LoadResult loadResult = NoteFile.loadNotes(oldFile, password);
-			switch (loadResult.result)
-			{
-				case Success:
-					break;
-				case EncryptionError:
-					ErrorDialog.show(NoteListSelectionActivity.this, R.string.error_bad_password);
-					return false;
-				default:
-				{
-					String message = getString(R.string.error_create).replace("%s", oldName);
-					ErrorDialog.show(NoteListSelectionActivity.this, message);
-					return false;
-				}
-			}
-
-			if (newFile.exists())
-			{
-				String message = getString(R.string.error_same_name).replace("%s", newName);
-				ErrorDialog.show(NoteListSelectionActivity.this, message);
-				return false;
-			}
-
-			if (!oldFile.renameTo(newFile))
-			{
-				String message = getString(R.string.error_create).replace("%s", newName);
-				ErrorDialog.show(NoteListSelectionActivity.this, message);
-				return false;
-			}
-
-			populateNoteLists();
-			return true;
+			m_task = new Task();
+			m_task.execute((RenameNoteListDialog)dialog);
+			return false;
 		}
+
+		private class Task extends AsyncTask<RenameNoteListDialog, Object, String>
+		{
+			@Override
+			protected void onPreExecute()
+			{
+				m_loadingDialog.show(getSupportFragmentManager(), "loading dialog");
+			}
+
+			@Override
+			protected String doInBackground(RenameNoteListDialog... dialog)
+			{
+				m_dialog = dialog[0];
+				String oldName = m_dialog.getInitialName();
+				String newName = m_dialog.getNewName();
+				String password = m_dialog.getPassword();
+
+				File rootDir = getNoteListsRoot();
+				if (rootDir == null)
+					return getString(R.string.error_inaccessible);
+
+				// Ensure we can load the note list.
+				File oldFile = new File(rootDir, oldName + NoteFile.cExtension);
+				File newFile = new File(rootDir, newName + NoteFile.cExtension);
+
+				NoteFile.LoadResult loadResult = NoteFile.loadNotes(oldFile, password);
+				switch (loadResult.result)
+				{
+					case Success:
+						break;
+					case EncryptionError:
+						return getString(R.string.error_bad_password);
+					default:
+						return getString(R.string.error_create).replace("%s", oldName);
+				}
+
+				if (newFile.exists())
+					return getString(R.string.error_same_name).replace("%s", newName);
+
+				if (!oldFile.renameTo(newFile))
+					return getString(R.string.error_create).replace("%s", newName);
+
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(String result)
+			{
+				m_loadingDialog.dismiss();
+				if (result == null)
+				{
+					populateNoteLists();
+					m_dialog.dismiss();
+				}
+				else
+					ErrorDialog.show(NoteListSelectionActivity.this, result);
+				m_task = null;
+			}
+
+			private LoadingDialog m_loadingDialog = new LoadingDialog();
+			private RenameNoteListDialog m_dialog;
+		}
+
+		private Task m_task;
 	}
 
 	private class RemoveListener implements MenuItem.OnMenuItemClickListener
@@ -446,39 +533,73 @@ public class NoteListSelectionActivity extends AppCompatActivity
 		@Override
 		public boolean onDialogAccepted(DialogFragment dialog)
 		{
-			RemoveNoteListDialog removeDialog = (RemoveNoteListDialog)dialog;
-			String name = removeDialog.getName();
-			String password = removeDialog.getPassword();
-
-			File rootDir = getNoteListsRoot();
-			if (rootDir == null)
+			if (m_task != null)
 				return false;
 
-			// Ensure we can load the note list.
-			File file = new File(rootDir, name + NoteFile.cExtension);
-			NoteFile.LoadResult loadResult = NoteFile.loadNotes(file, password);
-			String message = getString(R.string.error_remove).replace("%s", name);
-			switch (loadResult.result)
-			{
-				case Success:
-					break;
-				case EncryptionError:
-					ErrorDialog.show(NoteListSelectionActivity.this, R.string.error_bad_password);
-					return false;
-				default:
-					ErrorDialog.show(NoteListSelectionActivity.this, message);
-					return false;
-			}
-
-			if (!file.delete())
-			{
-				ErrorDialog.show(NoteListSelectionActivity.this, message);
-				return false;
-			}
-
-			populateNoteLists();
-			return true;
+			m_task = new Task();
+			m_task.execute((RemoveNoteListDialog)dialog);
+			return false;
 		}
+
+		private class Task extends AsyncTask<RemoveNoteListDialog, Object, String>
+		{
+			@Override
+			protected void onPreExecute()
+			{
+				m_loadingDialog.show(getSupportFragmentManager(), "loading dialog");
+			}
+
+			@Override
+			protected String doInBackground(RemoveNoteListDialog... dialog)
+			{
+				m_dialog = dialog[0];
+				String name = m_dialog.getName();
+				String password = m_dialog.getPassword();
+
+				File rootDir = getNoteListsRoot();
+				if (rootDir == null)
+					return getString(R.string.error_inaccessible);
+
+				// Ensure we can load the note list.
+				File file = new File(rootDir, name + NoteFile.cExtension);
+				NoteFile.LoadResult loadResult = NoteFile.loadNotes(file, password);
+
+				String message = getString(R.string.error_remove).replace("%s", name);
+				switch (loadResult.result)
+				{
+					case Success:
+						break;
+					case EncryptionError:
+						return getString(R.string.error_bad_password);
+					default:
+						return message;
+				}
+
+				if (!file.delete())
+					return message;
+
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(String result)
+			{
+				m_loadingDialog.dismiss();
+				if (result == null)
+				{
+					populateNoteLists();
+					m_dialog.dismiss();
+				}
+				else
+					ErrorDialog.show(NoteListSelectionActivity.this, result);
+				m_task = null;
+			}
+
+			private LoadingDialog m_loadingDialog = new LoadingDialog();
+			private RemoveNoteListDialog m_dialog;
+		}
+
+		private Task m_task;
 	}
 
 	private class ChangePasswordListener implements MenuItem.OnMenuItemClickListener
@@ -506,45 +627,74 @@ public class NoteListSelectionActivity extends AppCompatActivity
 		@Override
 		public boolean onDialogAccepted(DialogFragment dialog)
 		{
-			ChangePasswordDialog changePasswordDialog = (ChangePasswordDialog)dialog;
-			String name = changePasswordDialog.getName();
-			String currentPassword = changePasswordDialog.getCurrentPassword();
-			String newPassword = changePasswordDialog.getNewPassword();
-
-			File rootDir = getNoteListsRoot();
-			if (rootDir == null)
+			if (m_task != null)
 				return false;
 
-			// First load the note list.
-			File file = new File(rootDir, name + NoteFile.cExtension);
-			NoteFile.LoadResult loadResult = NoteFile.loadNotes(file, currentPassword);
-			String message = getString(R.string.error_load).replace("%s", name);
-			switch (loadResult.result)
-			{
-				case Success:
-					break;
-				case EncryptionError:
-					ErrorDialog.show(NoteListSelectionActivity.this, R.string.error_bad_password);
-					return false;
-				default:
-					ErrorDialog.show(NoteListSelectionActivity.this, message);
-					return false;
-			}
-
-			// Save the note list with the new password.
-			byte[] salt = Crypto.random(Crypto.cSaltLenBytes);
-			SecretKey key = Crypto.generateKey(newPassword, salt, Crypto.cDefaultKeyIterations);
-			NoteFile.Result result = NoteFile.saveNotes(file, loadResult.notes, salt, key);
-
-			if (result != NoteFile.Result.Success)
-			{
-				message = getString(R.string.error_save).replace("%s", name);
-				ErrorDialog.show(NoteListSelectionActivity.this, message);
-				return false;
-			}
-
-			return true;
+			m_task = new Task();
+			m_task.execute((ChangePasswordDialog)dialog);
+			return false;
 		}
+
+		private class Task extends AsyncTask<ChangePasswordDialog, Object, String>
+		{
+			@Override
+			protected void onPreExecute()
+			{
+				m_loadingDialog.show(getSupportFragmentManager(), "loading dialog");
+			}
+
+			@Override
+			protected String doInBackground(ChangePasswordDialog... dialog)
+			{
+				m_dialog = dialog[0];
+				String name = m_dialog.getName();
+				String currentPassword = m_dialog.getCurrentPassword();
+				String newPassword = m_dialog.getNewPassword();
+
+				File rootDir = getNoteListsRoot();
+				if (rootDir == null)
+					return getString(R.string.error_inaccessible);
+
+				// First load the note list.
+				File file = new File(rootDir, name + NoteFile.cExtension);
+				NoteFile.LoadResult loadResult = NoteFile.loadNotes(file, currentPassword);
+				switch (loadResult.result)
+				{
+					case Success:
+						break;
+					case EncryptionError:
+						return getString(R.string.error_bad_password);
+					default:
+						return getString(R.string.error_load).replace("%s", name);
+				}
+
+				// Save the note list with the new password.
+				byte[] salt = Crypto.random(Crypto.cSaltLenBytes);
+				SecretKey key = Crypto.generateKey(newPassword, salt, Crypto.cDefaultKeyIterations);
+				NoteFile.Result result = NoteFile.saveNotes(file, loadResult.notes, salt, key);
+
+				if (result != NoteFile.Result.Success)
+					return getString(R.string.error_save).replace("%s", name);
+
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(String result)
+			{
+				m_loadingDialog.dismiss();
+				if (result == null)
+					m_dialog.dismiss();
+				else
+					ErrorDialog.show(NoteListSelectionActivity.this, result);
+				m_task = null;
+			}
+
+			private LoadingDialog m_loadingDialog = new LoadingDialog();
+			private ChangePasswordDialog m_dialog;
+		}
+
+		private Task m_task;
 	}
 
 	private CustomAdapter m_noteListsAdapter;

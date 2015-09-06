@@ -8,6 +8,7 @@
 
 	<string name="button_add">Add</string>
 	<string name="button_save">Save</string>
+	<string name="button_dont_save">Don\'t save</string>
 	<string name="button_close">Close</string>
 	<string name="button_remove">Delete</string>
 	<string name="button_open">Open</string>
@@ -43,6 +44,9 @@
 	<string name="error_bad_password">Incorrect password.</string>
 	<string name="error_remove">Error deleting %s.</string>
 	<string name="error_inaccessible">Can\'t access storage.</string>
+
+	<string name="message_close_changed">Do you wish to save changes before closing?</string>
+	<string name="message_loading">Loading...</string>
 
 	<string name="menu_item_open">Open</string>
 	<string name="menu_item_rename">Rename</string>

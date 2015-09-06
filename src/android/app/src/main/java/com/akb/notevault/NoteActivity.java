@@ -17,6 +17,7 @@
 package com.akb.notevault;
 
 import android.content.Intent;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -24,7 +25,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 
+import com.akb.notevault.dialogs.CloseChangesDialog;
 import com.akb.notevault.dialogs.GeneratePasswordDialog;
+import com.akb.notevault.dialogs.OnDialogAcceptedListener;
 
 public class NoteActivity extends AppCompatActivity
 {
@@ -40,7 +43,8 @@ public class NoteActivity extends AppCompatActivity
 		Intent intent = getIntent();
 		m_id = intent.getLongExtra("Id", -1);
 		setTitle(intent.getStringExtra("Title"));
-		m_messageText.setText(intent.getStringExtra("Message"));
+		m_originalText = intent.getStringExtra("Message");
+		m_messageText.setText(m_originalText);
 	}
 
 	@Override
@@ -76,12 +80,36 @@ public class NoteActivity extends AppCompatActivity
 		return super.onOptionsItemSelected(item);
 	}
 
+	@Override
+	public void onBackPressed()
+	{
+		if (m_messageText.getText().toString().equals(m_originalText))
+		{
+			super.onBackPressed();
+			return;
+		}
+
+		CloseChangesDialog dialog = new CloseChangesDialog();
+		dialog.setOnDialogAcceptedListener(new OnDialogAcceptedListener()
+		{
+			@Override
+			public boolean onDialogAccepted(DialogFragment dialog)
+			{
+				CloseChangesDialog closeDialog = (CloseChangesDialog)dialog;
+				if (closeDialog.getSave())
+					saveChanges();
+				else
+					setResult(RESULT_CANCELED);
+				NoteActivity.super.onBackPressed();
+				return true;
+			}
+		});
+		dialog.show(getSupportFragmentManager(), "close note changed");
+	}
+
 	public void save(View view)
 	{
-		Intent data = new Intent();
-		data.putExtra("Id", m_id);
-		data.putExtra("Message", m_messageText.getText().toString());
-		setResult(RESULT_OK, data);
+		saveChanges();
 		finish();
 	}
 
@@ -91,6 +119,15 @@ public class NoteActivity extends AppCompatActivity
 		finish();
 	}
 
+	private void saveChanges()
+	{
+		Intent data = new Intent();
+		data.putExtra("Id", m_id);
+		data.putExtra("Message", m_messageText.getText().toString());
+		setResult(RESULT_OK, data);
+	}
+
 	private long m_id;
+	private String m_originalText;
 	private EditText m_messageText;
 }
