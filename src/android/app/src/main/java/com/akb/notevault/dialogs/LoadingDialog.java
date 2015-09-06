@@ -35,7 +35,7 @@ public class LoadingDialog extends DialogFragment
 
 		View rootView = inflater.inflate(R.layout.loading_dialog, null);
 		builder.setView(rootView);
-		builder.setCancelable(false);
+		setCancelable(false);
 		return builder.create();
 	}
 }
