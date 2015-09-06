@@ -1,0 +1,9 @@
+<CPackWiXPatch>
+	<CPackWiXFragment Id="CM_CP_bin.notevault.exe">
+		<ProgId Id='NoteVault.secnote' Description='Note Vault secure note file'>
+			<Extension Id='secnote' ContentType='application/x-secure-note'>
+				<Verb Id='open' Command='Open' TargetFile='CM_FP_bin.notevault.exe' Argument='"%1"' />
+			</Extension>
+		</ProgId>
+	</CPackWiXFragment>
+</CPackWiXPatch>
