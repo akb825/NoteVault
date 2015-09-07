@@ -59,6 +59,12 @@ public class HelpActivity extends AppCompatActivity
 			"<p>" + transfer + "</p>";
 
 		helpHtml = helpHtml +
+			"<h2>" + getString(R.string.help_tips_title) + "</h2>";
+
+		helpHtml = helpHtml +
+			"<p>" + getString(R.string.help_tips) + "</p>";
+
+		helpHtml = helpHtml +
 			"<p><font size=2>" + getString(R.string.copyright) + "</font></p>";
 
 		WebView helpView = (WebView)getWindow().getDecorView().findViewById(R.id.helpText);

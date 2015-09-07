@@ -179,6 +179,12 @@ public class NoteListSelectionActivity extends AppCompatActivity
 		m_noteListsAdapter.sort(new ItemCompare());
 	}
 
+	private void exit()
+	{
+		finish();
+		System.exit(1);
+	}
+
 	private class ListItem
 	{
 		public ListItem(String name) { m_name = name; }
@@ -303,20 +309,28 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			@Override
 			protected void onPostExecute(String result)
 			{
-				m_loadingDialog.dismiss();
-				if (result == null)
+				try
 				{
-					// Bring up the note list.
-					Intent intent = new Intent(NoteListSelectionActivity.this, NoteListActivity.class);
-					intent.putExtra("FilePath", m_file);
-					intent.putExtra("Key", m_key.getEncoded());
-					startActivity(intent);
+					m_loadingDialog.dismiss();
+					if (result == null)
+					{
+						// Bring up the note list.
+						Intent intent = new Intent(NoteListSelectionActivity.this,
+							NoteListActivity.class);
+						intent.putExtra("FilePath", m_file);
+						intent.putExtra("Key", m_key.getEncoded());
+						startActivity(intent);
 
-					m_dialog.dismiss();
+						m_dialog.dismiss();
+					}
+					else
+						ErrorDialog.show(NoteListSelectionActivity.this, result);
+					m_task = null;
 				}
-				else
-					ErrorDialog.show(NoteListSelectionActivity.this, result);
-				m_task = null;
+				catch (IllegalStateException e)
+				{
+					exit();
+				}
 			}
 
 			private File m_file;
@@ -382,23 +396,31 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			@Override
 			protected void onPostExecute(String result)
 			{
-				m_loadingDialog.dismiss();
-				if (result == null)
+				try
 				{
-					// Update the notes.
-					populateNoteLists();
+					m_loadingDialog.dismiss();
+					if (result == null)
+					{
+						// Update the notes.
+						populateNoteLists();
 
-					// Bring up the note list.
-					Intent intent = new Intent(NoteListSelectionActivity.this, NoteListActivity.class);
-					intent.putExtra("FilePath", m_file);
-					intent.putExtra("Key", m_key.getEncoded());
-					startActivity(intent);
+						// Bring up the note list.
+						Intent intent = new Intent(NoteListSelectionActivity.this,
+							NoteListActivity.class);
+						intent.putExtra("FilePath", m_file);
+						intent.putExtra("Key", m_key.getEncoded());
+						startActivity(intent);
 
-					m_dialog.dismiss();
+						m_dialog.dismiss();
+					}
+					else
+						ErrorDialog.show(NoteListSelectionActivity.this, result);
+					m_task = null;
 				}
-				else
-					ErrorDialog.show(NoteListSelectionActivity.this, result);
-				m_task = null;
+				catch (IllegalStateException e)
+				{
+					exit();
+				}
 			}
 
 			private File m_file;
@@ -467,6 +489,9 @@ public class NoteListSelectionActivity extends AppCompatActivity
 				File oldFile = new File(rootDir, oldName + NoteFile.cExtension);
 				File newFile = new File(rootDir, newName + NoteFile.cExtension);
 
+				if (newFile.exists())
+					return getString(R.string.error_same_name).replace("%s", newName);
+
 				NoteFile.LoadResult loadResult = NoteFile.loadNotes(oldFile, password);
 				switch (loadResult.result)
 				{
@@ -478,9 +503,6 @@ public class NoteListSelectionActivity extends AppCompatActivity
 						return getString(R.string.error_create).replace("%s", oldName);
 				}
 
-				if (newFile.exists())
-					return getString(R.string.error_same_name).replace("%s", newName);
-
 				if (!oldFile.renameTo(newFile))
 					return getString(R.string.error_create).replace("%s", newName);
 
@@ -490,15 +512,22 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			@Override
 			protected void onPostExecute(String result)
 			{
-				m_loadingDialog.dismiss();
-				if (result == null)
+				try
 				{
-					populateNoteLists();
-					m_dialog.dismiss();
+					m_loadingDialog.dismiss();
+					if (result == null)
+					{
+						populateNoteLists();
+						m_dialog.dismiss();
+					}
+					else
+						ErrorDialog.show(NoteListSelectionActivity.this, result);
+					m_task = null;
 				}
-				else
-					ErrorDialog.show(NoteListSelectionActivity.this, result);
-				m_task = null;
+				catch (IllegalStateException e)
+				{
+					exit();
+				}
 			}
 
 			private LoadingDialog m_loadingDialog = new LoadingDialog();
@@ -584,15 +613,22 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			@Override
 			protected void onPostExecute(String result)
 			{
-				m_loadingDialog.dismiss();
-				if (result == null)
+				try
 				{
-					populateNoteLists();
-					m_dialog.dismiss();
+					m_loadingDialog.dismiss();
+					if (result == null)
+					{
+						populateNoteLists();
+						m_dialog.dismiss();
+					}
+					else
+						ErrorDialog.show(NoteListSelectionActivity.this, result);
+					m_task = null;
 				}
-				else
-					ErrorDialog.show(NoteListSelectionActivity.this, result);
-				m_task = null;
+				catch (IllegalStateException e)
+				{
+					exit();
+				}
 			}
 
 			private LoadingDialog m_loadingDialog = new LoadingDialog();
@@ -682,12 +718,19 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			@Override
 			protected void onPostExecute(String result)
 			{
-				m_loadingDialog.dismiss();
-				if (result == null)
-					m_dialog.dismiss();
-				else
-					ErrorDialog.show(NoteListSelectionActivity.this, result);
-				m_task = null;
+				try
+				{
+					m_loadingDialog.dismiss();
+					if (result == null)
+						m_dialog.dismiss();
+					else
+						ErrorDialog.show(NoteListSelectionActivity.this, result);
+					m_task = null;
+				}
+				catch (IllegalStateException e)
+				{
+					exit();
+				}
 			}
 
 			private LoadingDialog m_loadingDialog = new LoadingDialog();

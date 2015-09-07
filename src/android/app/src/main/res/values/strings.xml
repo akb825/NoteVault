@@ -65,6 +65,16 @@
 		Due to an issue with Android, some files may not show up on your computer. If this happens,
 		reboot your device.
 	</string>
+	<string name="help_tips_title">Tips</string>
+	<string name="help_tips">
+		&lt;ul&gt;
+			&lt;li&gt;Press and hold on items for options such as renaming and deleting.&lt;/li&gt;
+			&lt;li&gt;&lt;b&gt;Be sure to close your notes before exiting.&lt;/b&gt;
+				When you press the home button, the notes will stay open to allow you to copy/paste
+				between other apps.&lt;/li&gt;
+			&lt;li&gt;When editing a note, use the password generator to create a random password.&lt;/li&gt;
+		&lt;/ul&gt;
+	</string>
 
     <string name="title_activity_note_list">NoteList</string>
     <string name="title_activity_note">NoteActivity</string>
