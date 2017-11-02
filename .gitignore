@@ -6,6 +6,8 @@
 
 # Android
 src/android/.gradle
+src/android/app/release
+src/android/app/NoteVault.apk
 /src/android/local.properties
 /src/android/.idea/workspace.xml
 /src/android/.idea/libraries
