@@ -29,17 +29,19 @@ class CryptoIStream::Impl
 {
 public:
 	Impl()
-		: m_parentStream(nullptr), m_bufferSize(0), m_bufferPos(0) {}
+		: m_parentStream(nullptr), m_cipherCtx(nullptr), m_bufferSize(0), m_bufferPos(0) {}
 
 	~Impl()
 	{
-		EVP_CIPHER_CTX_cleanup(&m_cipherCtx);
+		EVP_CIPHER_CTX_cleanup(m_cipherCtx);
+		EVP_CIPHER_CTX_free(m_cipherCtx);
 	}
 
 	bool open(IStream& parentStream, const std::vector<uint8_t>& key,
 		const std::vector<uint8_t>& iv)
 	{
-		EVP_CIPHER_CTX_init(&m_cipherCtx);
+		m_cipherCtx = EVP_CIPHER_CTX_new();
+		EVP_CIPHER_CTX_init(m_cipherCtx);
 
 		const EVP_CIPHER* cipher = EVP_aes_256_cbc();
 		if (EVP_CIPHER_key_length(cipher) != Crypto::cKeyLenBytes)
@@ -51,7 +53,7 @@ public:
 		if (key.size() != Crypto::cKeyLenBytes || iv.size() != Crypto::cBlockLenBytes)
 			return false;
 
-		if (!EVP_DecryptInit_ex(&m_cipherCtx, cipher, nullptr, key.data(), iv.data()))
+		if (!EVP_DecryptInit_ex(m_cipherCtx, cipher, nullptr, key.data(), iv.data()))
 			return false;
 
 		m_buffer.resize(Crypto::cBlockLenBytes*2);
@@ -90,12 +92,12 @@ public:
 				if (streamReadSize == 0)
 				{
 					//If we've reached the end of the stream, then it's the last block.
-					if (!EVP_DecryptFinal_ex(&m_cipherCtx, m_buffer.data(), &decryptSize))
+					if (!EVP_DecryptFinal_ex(m_cipherCtx, m_buffer.data(), &decryptSize))
 						return readSize;
 				}
 				else
 				{
-					if (!EVP_DecryptUpdate(&m_cipherCtx, m_buffer.data(), &decryptSize, readBuffer,
+					if (!EVP_DecryptUpdate(m_cipherCtx, m_buffer.data(), &decryptSize, readBuffer,
 						Crypto::cBlockLenBytes))
 					{
 						return readSize;
@@ -114,7 +116,7 @@ public:
 
 private:
 	IStream* m_parentStream;
-	EVP_CIPHER_CTX m_cipherCtx;
+	EVP_CIPHER_CTX* m_cipherCtx;
 	std::vector<uint8_t> m_buffer;
 	size_t m_bufferSize;
 	size_t m_bufferPos;
