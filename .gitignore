@@ -5,13 +5,22 @@
 *.log
 
 # Android
-src/android/.gradle
-src/android/app/release
-src/android/app/NoteVault.apk
-/src/android/local.properties
-/src/android/.idea/workspace.xml
-/src/android/.idea/libraries
-/src/android/captures
+.gradle
+local.properties
+captures
+*.iml
+*.apk
+**/.idea/libraries/
+**/.idea/caches/
+**/.idea/workspace.xml
+**/.idea/tasks.xml
+**/.idea/.name
+**/.idea/compiler.xml
+**/.idea/copyright/profiles_settings.xml
+**/.idea/encodings.xml
+**/.idea/misc.xml
+**/.idea/modules.xml
+**/.idea/scopes/scop
 
 # OS
 *.DS_Store

@@ -18,7 +18,8 @@ package com.akb.notevault.dialogs;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.text.ClipboardManager;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
@@ -40,8 +41,8 @@ public class GeneratePasswordDialog extends DialogFragment
 		LayoutInflater inflater = getActivity().getLayoutInflater();
 
 		View rootView = inflater.inflate(R.layout.password_generator_dialog, null);
-		m_numCharacters = (EditText)rootView.findViewById(R.id.numCharacters);
-		m_password = (EditText)rootView.findViewById(R.id.password);
+		m_numCharacters = rootView.findViewById(R.id.numCharacters);
+		m_password = rootView.findViewById(R.id.password);
 		generatePassword();
 
 		builder.setView(rootView);
@@ -75,7 +76,8 @@ public class GeneratePasswordDialog extends DialogFragment
 						ClipboardManager clipboardManager =
 							(ClipboardManager)activity.getSystemService(Activity.CLIPBOARD_SERVICE);
 						String password = m_password.getText().toString();
-						clipboardManager.setText(password);
+						clipboardManager.setPrimaryClip(ClipData.newPlainText("password",
+							password));
 					}
 				});
 			}
