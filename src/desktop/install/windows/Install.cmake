@@ -24,13 +24,6 @@ set(cryptoName libcrypto-${version}${platformSuffix}.dll)
 find_file(libcrypto ${cryptoName})
 install(FILES ${libcrypto} DESTINATION bin)
 
-# OpenSSL currently also uses VS2013 redistributable.
-# Make it optional in case this breaks in the future.
-find_file(msvcr120 msvcr120.dll)
-if (msvcr120)
-	install(FILES ${msvcr120} DESTINATION bin)
-endif()
-
 set(CPACK_GENERATOR WIX)
 set(CPACK_WIX_UPGRADE_GUID 5F45FB31-9A30-4501-9E65-6AB9E8FDAF34)
 set(CPACK_WIX_PRODUCT_ICON ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/windows/icon.ico)
