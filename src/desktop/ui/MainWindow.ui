@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Note Vault</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="Resources.qrc">
+    <normaloff>:/icon.svg</normaloff>:/icon.svg</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout_2">
     <item>
@@ -81,7 +85,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>26</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -133,8 +137,7 @@
   <action name="actionNew">
    <property name="icon">
     <iconset theme="document-new">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;New</string>
@@ -149,8 +152,7 @@
   <action name="actionOpen">
    <property name="icon">
     <iconset theme="document-open">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Open</string>
@@ -165,8 +167,7 @@
   <action name="actionSave">
    <property name="icon">
     <iconset theme="document-save">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Save</string>
@@ -181,8 +182,7 @@
   <action name="actionSaveAs">
    <property name="icon">
     <iconset theme="document-save-as">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Save &amp;As...</string>
@@ -197,8 +197,7 @@
   <action name="actionExit">
    <property name="icon">
     <iconset theme="application-exit">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>E&amp;xit</string>
@@ -213,8 +212,7 @@
   <action name="actionUndo">
    <property name="icon">
     <iconset theme="edit-undo">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Undo</string>
@@ -229,8 +227,7 @@
   <action name="actionRedo">
    <property name="icon">
     <iconset theme="edit-redo">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Redo</string>
@@ -245,8 +242,7 @@
   <action name="actionCut">
    <property name="icon">
     <iconset theme="edit-cut">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Cu&amp;t</string>
@@ -261,8 +257,7 @@
   <action name="actionCopy">
    <property name="icon">
     <iconset theme="edit-copy">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Copy</string>
@@ -277,8 +272,7 @@
   <action name="actionPaste">
    <property name="icon">
     <iconset theme="edit-paste">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Paste</string>
@@ -293,8 +287,7 @@
   <action name="actionDelete">
    <property name="icon">
     <iconset theme="edit-delete">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Delete</string>
@@ -306,8 +299,7 @@
   <action name="actionSelectAll">
    <property name="icon">
     <iconset theme="edit-select-all">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Select &amp;All</string>
@@ -322,8 +314,7 @@
   <action name="actionAddNote">
    <property name="icon">
     <iconset theme="list-add">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Add &amp;Note</string>
@@ -338,11 +329,10 @@
   <action name="actionRemoveNote">
    <property name="icon">
     <iconset theme="list-remove">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>&amp;Remove Note</string>
+    <string>R&amp;emove Note</string>
    </property>
    <property name="toolTip">
     <string>Remove selected note</string>
@@ -354,8 +344,7 @@
   <action name="actionAbout">
    <property name="icon">
     <iconset theme="help-about">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;About...</string>
@@ -376,7 +365,9 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="Resources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>actionExit</sender>
