@@ -21,6 +21,8 @@ captures
 **/.idea/misc.xml
 **/.idea/modules.xml
 **/.idea/scopes/scop
+**/.idea/vcs.xml
+**/app/release/
 
 # OS
 *.DS_Store

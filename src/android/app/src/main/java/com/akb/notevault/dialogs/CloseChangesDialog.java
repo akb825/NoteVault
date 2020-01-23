@@ -19,12 +19,11 @@ package com.akb.notevault.dialogs;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
-import android.support.v7.app.AlertDialog;
-import android.view.LayoutInflater;
+import androidx.fragment.app.DialogFragment;
+import androidx.appcompat.app.AlertDialog;
+
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 
 import com.akb.notevault.R;
 

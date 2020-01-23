@@ -17,9 +17,8 @@
 package com.akb.notevault.dialogs;
 
 import android.app.Activity;
-import android.app.Dialog;
-import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
+
+import androidx.appcompat.app.AlertDialog;
 
 import com.akb.notevault.R;
 
