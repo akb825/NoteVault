@@ -1,6 +1,6 @@
 #pragma once
 /*
- * Copyright 2015 Aaron Barany
+ * Copyright 2015-2026 Aaron Barany
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,9 +68,15 @@ private:
 	IdFactory m_ids;
 };
 
-class NoteSet::iterator : public std::iterator<std::random_access_iterator_tag, Note>
+class NoteSet::iterator
 {
 public:
+	using iterator_category = std::random_access_iterator_tag;
+	using value_type = Note;
+	using difference_type = std::ptrdiff_t;
+	using pointer = value_type*;
+	using reference = value_type&;
+
 	iterator();
 
 	reference operator*() const;
@@ -109,9 +115,15 @@ private:
 	Note* m_curNote;
 };
 
-class NoteSet::const_iterator : public std::iterator<std::random_access_iterator_tag, const Note>
+class NoteSet::const_iterator
 {
 public:
+	using iterator_category = std::random_access_iterator_tag;
+	using value_type = const Note;
+	using difference_type = std::ptrdiff_t;
+	using pointer = value_type*;
+	using reference = value_type&;
+
 	const_iterator();
 	const_iterator(const NoteSet::iterator& iter);
 

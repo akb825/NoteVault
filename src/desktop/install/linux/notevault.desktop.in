@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Version=0.2
+Version=@CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@.@CPACK_PACKAGE_VERSION_PATCH@
 Name=Note Vault
 Comment=Save notes securely
 Exec=notevault %f

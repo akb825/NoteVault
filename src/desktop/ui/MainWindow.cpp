@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Aaron Barany
+ * Copyright 2015-2026 Aaron Barany
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,11 +29,11 @@
 #include <QtCore/QDir>
 #include <QtCore/QTimer>
 #include <QtGui/QKeyEvent>
+#include <QtGui/QUndoStack>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QMessageBox>
-#include <QtWidgets/QUndoStack>
 #include <assert.h>
 
 #include "ui_MainWindow.h"

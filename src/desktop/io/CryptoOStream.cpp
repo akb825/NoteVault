@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Aaron Barany
+ * Copyright 2015-2026 Aaron Barany
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@
 #include "Crypto.h"
 #include <openssl/evp.h>
 #include <algorithm>
-#include <stdexcept>
 #include <cassert>
+#include <cstdlib>
 #include <cstring>
+#include <iostream>
 
 namespace NoteVault
 {
@@ -41,7 +42,10 @@ public:
 			if (EVP_EncryptFinal_ex(m_cipherCtx, m_buffer.data(), &encryptSize))
 			{
 				if (encryptSize > static_cast<int>(m_buffer.size()))
-					throw std::overflow_error("Buffer overflow!");
+				{
+					std::cerr << "Buffer overflow!" << std::endl;
+					std::abort();
+				}
 				size_t writeSize = m_parentStream->write(m_buffer.data(), encryptSize);
 				(void)writeSize;
 				assert(static_cast<int>(writeSize) == encryptSize);

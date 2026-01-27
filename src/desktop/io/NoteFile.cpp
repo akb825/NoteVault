@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Aaron Barany
+ * Copyright 2015-2026 Aaron Barany
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,7 +127,7 @@ NoteFile::Result NoteFile::loadNotes(NoteSet& notes, IStream& stream, const std:
 	//Read the header: magic string, version, salt, and initialization vector.
 	char magicStringCheck[sizeof(cMagicString)];
 	if (stream.read(magicStringCheck, sizeof(magicStringCheck)) != sizeof(magicStringCheck) ||
-		strncmp(magicStringCheck, cMagicString, sizeof(cMagicString) != 0))
+		strncmp(magicStringCheck, cMagicString, sizeof(cMagicString)) != 0)
 	{
 		return Result::InvalidFile;
 	}
@@ -171,7 +171,7 @@ NoteFile::Result NoteFile::loadNotes(NoteSet& notes, IStream& stream, const std:
 	memset(magicStringCheck, 0, sizeof(magicStringCheck));
 	if (cryptoStream.read(magicStringCheck, sizeof(magicStringCheck)) != sizeof(magicStringCheck))
 		return Result::IoError;
-	if (strncmp(magicStringCheck, cMagicString, sizeof(cMagicString) != 0))
+	if (strncmp(magicStringCheck, cMagicString, sizeof(cMagicString)) != 0)
 		return Result::EncryptionError;
 
 	//Read the notes

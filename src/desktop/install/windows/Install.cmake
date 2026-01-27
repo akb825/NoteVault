@@ -1,16 +1,16 @@
 # Install dependent DLLs
 
 # Qt
-find_file(Qt5Core Qt5Core.dll)
-find_file(Qt5Gui Qt5Gui.dll)
-find_file(Qt5Widgets Qt5Widgets.dll)
-find_file(Qt5Svg Qt5Svg.dll)
-install(FILES ${Qt5Core} ${Qt5Gui} ${Qt5Widgets} ${Qt5Svg} DESTINATION bin)
+find_file(Qt6Core Qt6Core.dll)
+find_file(Qt6Gui Qt6Gui.dll)
+find_file(Qt6Widgets Qt6Widgets.dll)
+find_file(Qt6Svg Qt6Svg.dll)
+install(FILES ${Qt6Core} ${Qt6Gui} ${Qt6Widgets} ${Qt6Svg} DESTINATION bin)
 
 # Also the platform.
-get_filename_component(qt5Base ${Qt5Core} DIRECTORY)
-get_filename_component(qt5Base ${qt5Base} DIRECTORY)
-find_file(qwindows qwindows.dll PATHS ${qt5Base}/plugins/platforms)
+get_filename_component(qt6Base ${Qt6Core} DIRECTORY)
+get_filename_component(qt6Base ${qt6Base} DIRECTORY)
+find_file(qwindows qwindows.dll PATHS ${qt6Base}/plugins/platforms)
 install(FILES ${qwindows} DESTINATION bin/platforms)
 
 # OpenSSL

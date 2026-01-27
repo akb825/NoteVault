@@ -1,5 +1,7 @@
+cmake_minimum_required(VERSION 3.16)
 project(notevault)
-cmake_minimum_required(VERSION 3.0.2)
+
+set(CMAKE_CXX_STANDARD 11)
 
 set(SRC_LIST
 	main.cpp
@@ -45,7 +47,7 @@ set(SRC_LIST
 	)
 
 if (UNIX)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+	add_compile_options(-Wall -Werror)
 elseif (WIN32)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 	set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/windows)
@@ -56,18 +58,13 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt5Widgets REQUIRED)
-find_package(OpenSSL REQUIRED)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(OpenSSL REQUIRED COMPONENTS Crypto)
 
-qt5_wrap_ui(UI_HEADERS ui/AboutDialog.ui)
-qt5_wrap_ui(UI_HEADERS ui/ConfirmCloseDialog.ui)
-qt5_wrap_ui(UI_HEADERS ui/GeneratePasswordDialog.ui)
-qt5_wrap_ui(UI_HEADERS ui/OpenPasswordDialog.ui)
-qt5_wrap_ui(UI_HEADERS ui/MainWindow.ui)
-qt5_wrap_ui(UI_HEADERS ui/SavePasswordDialog.ui)
+qt_standard_project_setup()
 
-add_executable(${PROJECT_NAME} ${SRC_LIST} ${UI_HEADERS})
-target_link_libraries(${PROJECT_NAME} Qt5::Widgets ${OPENSSL_LIBRARIES})
+qt_add_executable(${PROJECT_NAME} ${SRC_LIST})
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets OpenSSL::Crypto)
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 set(CPACK_PACKAGE_NAME "Note Vault")
@@ -76,7 +73,7 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Store notes securely without relying on a
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "Note Vault")
 set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY NoteVault)
 set(CPACK_PACKAGE_VERSION_MAJOR 1)
-set(CPACK_PACKAGE_VERSION_MINOR 0)
+set(CPACK_PACKAGE_VERSION_MINOR 1)
 set(CPACK_PACKAGE_VERSION_PATCH 0)
 set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/../license.txt)
 set(CPACK_PACKAGE_EXECUTABLES "${PROJECT_NAME};Note Vault")

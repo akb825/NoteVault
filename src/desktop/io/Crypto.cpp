@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Aaron Barany
+ * Copyright 2015-2026 Aaron Barany
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ void Crypto::initialize()
 {
 	OpenSSL_add_all_algorithms();
 	ERR_load_crypto_strings();
-	ENGINE_load_builtin_engines();
-	RAND_set_rand_engine(nullptr);
 }
 
 std::vector<uint8_t> Crypto::generateKey(const std::string& password,
