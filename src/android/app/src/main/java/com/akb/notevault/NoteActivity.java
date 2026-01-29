@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Aaron Barany
+ * Copyright 2015-2026 Aaron Barany
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,20 @@
 package com.akb.notevault;
 
 import android.content.Intent;
+
+import androidx.activity.OnBackPressedCallback;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
 
 import com.akb.notevault.dialogs.CloseChangesDialog;
@@ -31,20 +39,49 @@ import com.akb.notevault.dialogs.OnDialogAcceptedListener;
 
 public class NoteActivity extends AppCompatActivity
 {
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_note);
 
-		m_messageText = (EditText)getWindow().getDecorView().findViewById(R.id.message);
+		Window window = getWindow();
+        View decorView = window.getDecorView();
+		m_messageText = decorView.findViewById(R.id.message);
+
+        Button saveButton = decorView.findViewById(R.id.saveButton);
+        saveButton.setOnClickListener(this::save);
+
+		Button cancelButton = decorView.findViewById(R.id.cancelButton);
+		cancelButton.setOnClickListener(this::cancel);
 
 		Intent intent = getIntent();
 		m_id = intent.getLongExtra("Id", -1);
 		setTitle(intent.getStringExtra("Title"));
 		m_originalText = intent.getStringExtra("Message");
 		m_messageText.setText(m_originalText);
+		if (m_originalText.isEmpty())
+		{
+			// Give focus if empty as expected to input text immediately.
+			m_messageText.requestFocus();
+			window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+		}
+
+		getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
+			@Override
+			public void handleOnBackPressed() {
+				NoteActivity.this.backPressed();
+			}
+		});
+
+		ViewCompat.setOnApplyWindowInsetsListener(
+			decorView.findViewById(R.id.activityNote),
+			new WindowInsetHandler());
+
+		WindowInsetsControllerCompat insetsController =
+			WindowCompat.getInsetsController(window, decorView);
+		insetsController.setAppearanceLightStatusBars(true);
+		insetsController.setAppearanceLightNavigationBars(true);
 	}
 
 	@Override
@@ -80,12 +117,23 @@ public class NoteActivity extends AppCompatActivity
 		return super.onOptionsItemSelected(item);
 	}
 
-	@Override
-	public void onBackPressed()
+	public void save(View view)
+	{
+		saveChanges();
+		finish();
+	}
+
+	public void cancel(View view)
+	{
+		setResult(RESULT_CANCELED);
+		finish();
+	}
+
+	private void backPressed()
 	{
 		if (m_messageText.getText().toString().equals(m_originalText))
 		{
-			super.onBackPressed();
+			finish();
 			return;
 		}
 
@@ -100,23 +148,11 @@ public class NoteActivity extends AppCompatActivity
 					saveChanges();
 				else
 					setResult(RESULT_CANCELED);
-				NoteActivity.super.onBackPressed();
+				finish();
 				return true;
 			}
 		});
 		dialog.show(getSupportFragmentManager(), "close note changed");
-	}
-
-	public void save(View view)
-	{
-		saveChanges();
-		finish();
-	}
-
-	public void cancel(View view)
-	{
-		setResult(RESULT_CANCELED);
-		finish();
 	}
 
 	private void saveChanges()

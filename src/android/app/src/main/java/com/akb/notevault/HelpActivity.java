@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Aaron Barany
+ * Copyright 2015-2026 Aaron Barany
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,15 @@
 package com.akb.notevault;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+
 import android.os.Bundle;
 import android.view.View;
+import android.view.Window;
 import android.webkit.WebView;
+import android.widget.Button;
 
 import com.akb.notevault.io.NoteFile;
 
@@ -28,7 +34,6 @@ import java.io.File;
 
 public class HelpActivity extends AppCompatActivity
 {
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
@@ -67,10 +72,24 @@ public class HelpActivity extends AppCompatActivity
 		helpHtml = helpHtml +
 			"<p><font size=2>" + getString(R.string.copyright) + "</font></p>";
 
-		WebView helpView = (WebView)getWindow().getDecorView().findViewById(R.id.helpText);
+		Window window = getWindow();
+        View decorView = window.getDecorView();
+		WebView helpView = decorView.findViewById(R.id.helpText);
 		helpView.loadData(helpHtml, "text/html", null);
 
+		Button closeButton = decorView.findViewById(R.id.closeButton);
+		closeButton.setOnClickListener(this::closeActivity);
+
 		setTitle(R.string.title_help_screen);
+
+		ViewCompat.setOnApplyWindowInsetsListener(
+			decorView.findViewById(R.id.activityHelpScreen),
+			new WindowInsetHandler());
+
+		WindowInsetsControllerCompat insetsController =
+			WindowCompat.getInsetsController(window, decorView);
+		insetsController.setAppearanceLightStatusBars(true);
+		insetsController.setAppearanceLightNavigationBars(true);
 	}
 
 	public void closeActivity(View view)

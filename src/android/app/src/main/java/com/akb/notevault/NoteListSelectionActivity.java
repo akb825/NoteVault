@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Aaron Barany
+ * Copyright 2015-2026 Aaron Barany
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,24 @@ package com.akb.notevault;
 
 import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Environment;
+
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -47,13 +54,14 @@ import com.akb.notevault.notes.NoteSet;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Comparator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.crypto.SecretKey;
 
 
 public class NoteListSelectionActivity extends AppCompatActivity
 {
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
@@ -63,9 +71,27 @@ public class NoteListSelectionActivity extends AppCompatActivity
 
 		m_noteListsAdapter = new CustomAdapter(getApplicationContext(), R.layout.list_item,
 			R.id.itemText);
-		ListView noteListsView = (ListView)getWindow().getDecorView().findViewById(R.id.noteLists);
+
+		Window window = getWindow();
+		View decorView = window.getDecorView();
+		ListView noteListsView = decorView.findViewById(R.id.noteLists);
 		noteListsView.setAdapter(m_noteListsAdapter);
 		populateNoteLists();
+
+		Button addNoteListButton = decorView.findViewById(R.id.addNoteListButton);
+		addNoteListButton.setOnClickListener(this::addNoteList);
+
+		m_executor = Executors.newSingleThreadExecutor();
+		m_postExecuteHandler = new Handler(Looper.getMainLooper());
+
+		ViewCompat.setOnApplyWindowInsetsListener(
+			decorView.findViewById(R.id.activityNoteListSelection),
+			new WindowInsetHandler());
+
+		WindowInsetsControllerCompat insetsController =
+			WindowCompat.getInsetsController(window, decorView);
+		insetsController.setAppearanceLightStatusBars(true);
+		insetsController.setAppearanceLightNavigationBars(true);
 	}
 
 	@Override
@@ -185,7 +211,7 @@ public class NoteListSelectionActivity extends AppCompatActivity
 		System.exit(1);
 	}
 
-	private class ListItem
+	private static class ListItem
 	{
 		public ListItem(String name) { m_name = name; }
 		public String getName() { return m_name; }
@@ -200,7 +226,7 @@ public class NoteListSelectionActivity extends AppCompatActivity
 		private String m_name;
 	}
 
-	private class ItemCompare implements Comparator<ListItem>
+	private static class ItemCompare implements Comparator<ListItem>
 	{
 		public int compare(ListItem left, ListItem right)
 		{
@@ -220,7 +246,7 @@ public class NoteListSelectionActivity extends AppCompatActivity
 		public View getView(int position, View convertView, ViewGroup parent)
 		{
 			View view = super.getView(position, convertView, parent);
-			TextView textView = (TextView)view.findViewById(m_textViewResourceId);
+			TextView textView = view.findViewById(m_textViewResourceId);
 			textView.setTag(getItem(position));
 			textView.setOnClickListener(new OpenListener(textView));
 			registerForContextMenu(textView);
@@ -249,6 +275,34 @@ public class NoteListSelectionActivity extends AppCompatActivity
 		private TextView m_noteListView;
 	}
 
+	private abstract class AsyncTask<DataType, ResultType>
+	{
+		public void execute(DataType data)
+		{
+			onPreExecute();
+			m_executor.execute(new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					ResultType result = doInBackground(data);
+					m_postExecuteHandler.post(new Runnable()
+					{
+						@Override
+						public void run()
+						{
+							onPostExecute(result);
+						}
+					});
+				}
+			});
+		}
+
+		protected abstract void onPreExecute();
+		protected abstract ResultType doInBackground(DataType data);
+		protected abstract void onPostExecute(ResultType result);
+	}
+
 	private class OpenNoteListener implements OnDialogAcceptedListener
 	{
 		@Override
@@ -262,7 +316,7 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			return false;
 		}
 
-		private class Task extends AsyncTask<OpenNoteListDialog, Object, String>
+		private class Task extends AsyncTask<OpenNoteListDialog, String>
 		{
 			@Override
 			protected void onPreExecute()
@@ -271,9 +325,9 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			}
 
 			@Override
-			protected String doInBackground(OpenNoteListDialog... dialog)
+			protected String doInBackground(OpenNoteListDialog dialog)
 			{
-				m_dialog = dialog[0];
+				m_dialog = dialog;
 				String name = m_dialog.getName();
 				String password = m_dialog.getPassword();
 
@@ -355,7 +409,7 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			return false;
 		}
 
-		private class Task extends AsyncTask<AddNoteListDialog, Object, String>
+		private class Task extends AsyncTask<AddNoteListDialog, String>
 		{
 			@Override
 			protected void onPreExecute()
@@ -364,9 +418,9 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			}
 
 			@Override
-			protected String doInBackground(AddNoteListDialog... dialog)
+			protected String doInBackground(AddNoteListDialog dialog)
 			{
-				m_dialog = dialog[0];
+				m_dialog = dialog;
 				String name = m_dialog.getName();
 				String password = m_dialog.getPassword();
 
@@ -465,7 +519,7 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			return false;
 		}
 
-		private class Task extends AsyncTask<RenameNoteListDialog, Object, String>
+		private class Task extends AsyncTask<RenameNoteListDialog, String>
 		{
 			@Override
 			protected void onPreExecute()
@@ -474,9 +528,9 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			}
 
 			@Override
-			protected String doInBackground(RenameNoteListDialog... dialog)
+			protected String doInBackground(RenameNoteListDialog dialog)
 			{
-				m_dialog = dialog[0];
+				m_dialog = dialog;
 				String oldName = m_dialog.getInitialName();
 				String newName = m_dialog.getNewName();
 				String password = m_dialog.getPassword();
@@ -570,7 +624,7 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			return false;
 		}
 
-		private class Task extends AsyncTask<RemoveNoteListDialog, Object, String>
+		private class Task extends AsyncTask<RemoveNoteListDialog, String>
 		{
 			@Override
 			protected void onPreExecute()
@@ -579,9 +633,9 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			}
 
 			@Override
-			protected String doInBackground(RemoveNoteListDialog... dialog)
+			protected String doInBackground(RemoveNoteListDialog dialog)
 			{
-				m_dialog = dialog[0];
+				m_dialog = dialog;
 				String name = m_dialog.getName();
 				String password = m_dialog.getPassword();
 
@@ -671,7 +725,7 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			return false;
 		}
 
-		private class Task extends AsyncTask<ChangePasswordDialog, Object, String>
+		private class Task extends AsyncTask<ChangePasswordDialog, String>
 		{
 			@Override
 			protected void onPreExecute()
@@ -680,9 +734,9 @@ public class NoteListSelectionActivity extends AppCompatActivity
 			}
 
 			@Override
-			protected String doInBackground(ChangePasswordDialog... dialog)
+			protected String doInBackground(ChangePasswordDialog dialog)
 			{
-				m_dialog = dialog[0];
+				m_dialog = dialog;
 				String name = m_dialog.getName();
 				String currentPassword = m_dialog.getCurrentPassword();
 				String newPassword = m_dialog.getNewPassword();
@@ -741,4 +795,6 @@ public class NoteListSelectionActivity extends AppCompatActivity
 	}
 
 	private CustomAdapter m_noteListsAdapter;
+	private ExecutorService m_executor;
+	private Handler m_postExecuteHandler;
 }

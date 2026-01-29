@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Aaron Barany
+ * Copyright 2015-2026 Aaron Barany
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import androidx.fragment.app.DialogFragment;
 import androidx.appcompat.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 
@@ -54,13 +55,15 @@ public class AddNoteDialog extends DialogFragment
 		LayoutInflater inflater = getActivity().getLayoutInflater();
 
 		View rootView = inflater.inflate(R.layout.add_rename_note_dialog, null);
-		m_name = (EditText)rootView.findViewById(R.id.newName);
+		m_name = rootView.findViewById(R.id.newName);
 
 		builder.setView(rootView);
 		builder.setPositiveButton(R.string.button_add, null);
 		builder.setNegativeButton(R.string.button_cancel, null);
 
 		final AlertDialog alertDialog = builder.create();
+		alertDialog.getWindow().setSoftInputMode(
+			WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
 		alertDialog.setOnShowListener(new DialogInterface.OnShowListener()
 		{
 			@Override

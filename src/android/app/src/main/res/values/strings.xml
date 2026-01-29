@@ -1,6 +1,6 @@
 <resources>
 	<string name="app_name">Note Vault</string>
-	<string name="copyright">Copyright &amp;copy; 2015 Aaron Barany</string>
+	<string name="copyright">Copyright &amp;copy; 2015-2026 Aaron Barany</string>
 
 	<string name="action_refresh">Refresh</string>
 	<string name="action_help">Help</string>
@@ -46,7 +46,7 @@
 	<string name="error_inaccessible">Can\'t access storage.</string>
 
 	<string name="message_close_changed">Do you wish to save changes before closing?</string>
-	<string name="message_loading">Loading...</string>
+	<string name="message_loading">Loading…</string>
 
 	<string name="menu_item_open">Open</string>
 	<string name="menu_item_rename">Rename</string>
@@ -75,6 +75,9 @@
 			&lt;li&gt;When editing a note, use the password generator to create a random password.&lt;/li&gt;
 		&lt;/ul&gt;
 	</string>
+
+	<string name="hint_message">Message to save in the note</string>
+	<string name="hint_generate_password">Tap Generate for password</string>
 
     <string name="title_activity_note_list">NoteList</string>
     <string name="title_activity_note">NoteActivity</string>

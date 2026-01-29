@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Aaron Barany
+ * Copyright 2015-2026 Aaron Barany
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,14 @@ package com.akb.notevault;
 
 import android.content.Context;
 import android.content.Intent;
+
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
@@ -26,7 +34,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -47,7 +57,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class NoteListActivity extends AppCompatActivity
 {
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
@@ -64,11 +73,42 @@ public class NoteListActivity extends AppCompatActivity
 
 		m_noteListAdapter = new CustomAdapter(getApplicationContext(), R.layout.list_item,
 			R.id.itemText);
-		ListView noteView = (ListView)getWindow().getDecorView().findViewById(R.id.notes);
+
+		Window window = getWindow();
+		View decorView = window.getDecorView();
+		ListView noteView = decorView.findViewById(R.id.notes);
 		noteView.setAdapter(m_noteListAdapter);
 		reloadNotes();
 
+		Button addNoteButton = decorView.findViewById(R.id.addNoteButton);
+		addNoteButton.setOnClickListener(this::addNote);
+
+		Button closeButton = decorView.findViewById(R.id.closeButton);
+		closeButton.setOnClickListener(this::close);
+
 		setTitle(m_name);
+
+		m_noteActivityLauncher = registerForActivityResult(
+			new ActivityResultContracts.StartActivityForResult(),
+			new ActivityResultCallback<>()
+			{
+				@Override
+				public void onActivityResult(ActivityResult result)
+				{
+					if (result.getResultCode() != RESULT_CANCELED && result.getData() != null)
+						NoteListActivity.this.notesClosed(result.getData());
+				}
+			}
+		);
+
+		ViewCompat.setOnApplyWindowInsetsListener(
+			decorView.findViewById(R.id.activityNoteList),
+			new WindowInsetHandler());
+
+		WindowInsetsControllerCompat insetsController =
+			WindowCompat.getInsetsController(window, decorView);
+		insetsController.setAppearanceLightStatusBars(true);
+		insetsController.setAppearanceLightNavigationBars(true);
 	}
 
 	@Override
@@ -87,7 +127,7 @@ public class NoteListActivity extends AppCompatActivity
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 
-		//noinspection SimplifiableIfStatement
+		// noinspection SimplifiableIfStatement
 		if (id == R.id.action_help)
 		{
 			Intent intent = new Intent(this, HelpActivity.class);
@@ -104,19 +144,6 @@ public class NoteListActivity extends AppCompatActivity
 		TextView textView = (TextView)v;
 		menu.add(R.string.menu_item_rename).setOnMenuItemClickListener(new RenameListener(textView));
 		menu.add(R.string.menu_item_remove).setOnMenuItemClickListener(new RemoveListener(textView));
-	}
-
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data)
-	{
-		if (resultCode == RESULT_CANCELED)
-			return;
-
-		long id = data.getLongExtra("Id", -1);
-		String message = data.getStringExtra("Message");
-
-		m_notes.find(id).setMessage(message);
-		saveNotes();
 	}
 
 	public void addNote(View view)
@@ -175,10 +202,19 @@ public class NoteListActivity extends AppCompatActivity
 		intent.putExtra("Id", note.getId());
 		intent.putExtra("Title", note.getTitle());
 		intent.putExtra("Message", note.getMessage());
-		startActivityForResult(intent, 0);
+		m_noteActivityLauncher.launch(intent);
 	}
 
-	private class NoteCompare implements Comparator<Note>
+	private void notesClosed(Intent data)
+	{
+		long id = data.getLongExtra("Id", -1);
+		String message = data.getStringExtra("Message");
+
+		m_notes.find(id).setMessage(message);
+		saveNotes();
+	}
+
+	private static class NoteCompare implements Comparator<Note>
 	{
 		public int compare(Note left, Note right)
 		{
@@ -186,7 +222,7 @@ public class NoteListActivity extends AppCompatActivity
 		}
 	}
 
-	private class ListItem
+	private static class ListItem
 	{
 		public ListItem(Note note)
 		{
@@ -222,7 +258,7 @@ public class NoteListActivity extends AppCompatActivity
 		public View getView(int position, View convertView, ViewGroup parent)
 		{
 			View view = super.getView(position, convertView, parent);
-			TextView textView = (TextView)view.findViewById(m_textViewResourceId);
+			TextView textView = view.findViewById(m_textViewResourceId);
 			textView.setTag(getItem(position));
 			textView.setOnClickListener(new OpenListener(textView));
 			registerForContextMenu(textView);
@@ -359,4 +395,5 @@ public class NoteListActivity extends AppCompatActivity
 	private byte[] m_salt;
 	private NoteSet m_notes;
 	private CustomAdapter m_noteListAdapter;
+	private ActivityResultLauncher<Intent> m_noteActivityLauncher;
 }
