@@ -32,14 +32,15 @@ import com.akb.notevault.R;
 
 public class ChangePasswordDialog extends DialogFragment
 {
+	public ChangePasswordDialog(String name, OnDialogAcceptedListener listener)
+	{
+		m_name = name;
+		m_acceptedListener = listener;
+	}
+
 	public String getName()
 	{
 		return m_name;
-	}
-
-	public void setName(String name)
-	{
-		m_name = name;
 	}
 
 	public String getCurrentPassword()
@@ -54,16 +55,6 @@ public class ChangePasswordDialog extends DialogFragment
 		if (m_newPassword == null)
 			return "";
 		return m_newPassword.getText().toString();
-	}
-
-	public OnDialogAcceptedListener getOnDialogAcceptedListener()
-	{
-		return m_acceptedListener;
-	}
-
-	public void setOnDialogAcceptedListener(OnDialogAcceptedListener listener)
-	{
-		m_acceptedListener = listener;
 	}
 
 	@Override

@@ -24,6 +24,9 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentFactory;
+
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -42,6 +45,7 @@ public class NoteActivity extends AppCompatActivity
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
+		getSupportFragmentManager().setFragmentFactory(new DialogFactory());
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_note);
 
@@ -129,16 +133,9 @@ public class NoteActivity extends AppCompatActivity
 		finish();
 	}
 
-	private void backPressed()
+	private CloseChangesDialog createCloseChangesDialog()
 	{
-		if (m_messageText.getText().toString().equals(m_originalText))
-		{
-			finish();
-			return;
-		}
-
-		CloseChangesDialog dialog = new CloseChangesDialog();
-		dialog.setOnDialogAcceptedListener(new OnDialogAcceptedListener()
+		return new CloseChangesDialog(new OnDialogAcceptedListener()
 		{
 			@Override
 			public boolean onDialogAccepted(DialogFragment dialog)
@@ -152,6 +149,17 @@ public class NoteActivity extends AppCompatActivity
 				return true;
 			}
 		});
+	}
+
+	private void backPressed()
+	{
+		if (m_messageText.getText().toString().equals(m_originalText))
+		{
+			finish();
+			return;
+		}
+
+		CloseChangesDialog dialog = createCloseChangesDialog();
 		dialog.show(getSupportFragmentManager(), "close note changed");
 	}
 
@@ -161,6 +169,18 @@ public class NoteActivity extends AppCompatActivity
 		data.putExtra("Id", m_id);
 		data.putExtra("Message", m_messageText.getText().toString());
 		setResult(RESULT_OK, data);
+	}
+
+	private class DialogFactory extends FragmentFactory
+	{
+		@Override
+		public Fragment instantiate(ClassLoader classLoader, String className)
+		{
+			Class<? extends Fragment> clazz = loadFragmentClass(classLoader, className);
+			if (clazz == CloseChangesDialog.class)
+				return createCloseChangesDialog();
+			return super.instantiate(classLoader, className);
+		}
 	}
 
 	private long m_id;

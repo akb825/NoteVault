@@ -31,6 +31,11 @@ import com.akb.notevault.R;
 
 public class AddNoteListDialog extends DialogFragment
 {
+	public AddNoteListDialog(OnDialogAcceptedListener listener)
+	{
+		m_acceptedListener = listener;
+	}
+
 	public String getName()
 	{
 		if (m_name == null)
@@ -43,16 +48,6 @@ public class AddNoteListDialog extends DialogFragment
 		if (m_password == null)
 			return "";
 		return m_password.getText().toString();
-	}
-
-	public OnDialogAcceptedListener getOnDialogAcceptedListener()
-	{
-		return m_acceptedListener;
-	}
-
-	public void setOnDialogAcceptedListener(OnDialogAcceptedListener listener)
-	{
-		m_acceptedListener = listener;
 	}
 
 	@Override

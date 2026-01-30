@@ -31,14 +31,15 @@ import com.akb.notevault.R;
 
 public class RenameNoteListDialog extends DialogFragment
 {
+	public RenameNoteListDialog(String name, OnDialogAcceptedListener listener)
+	{
+		m_name = name;
+		m_acceptedListener = listener;
+	}
+
 	public String getInitialName()
 	{
 		return m_name;
-	}
-
-	public void setInitialName(String name)
-	{
-		m_name = name;
 	}
 
 	public String getNewName()
@@ -53,16 +54,6 @@ public class RenameNoteListDialog extends DialogFragment
 		if (m_password == null)
 			return "";
 		return m_password.getText().toString();
-	}
-
-	public OnDialogAcceptedListener getOnDialogAcceptedListener()
-	{
-		return m_acceptedListener;
-	}
-
-	public void setOnDialogAcceptedListener(OnDialogAcceptedListener listener)
-	{
-		m_acceptedListener = listener;
 	}
 
 	@Override

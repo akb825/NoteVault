@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Aaron Barany
+ * Copyright 2015-2026 Aaron Barany
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import androidx.fragment.app.DialogFragment;
 import androidx.appcompat.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -31,14 +32,15 @@ import com.akb.notevault.R;
 
 public class RemoveNoteListDialog extends DialogFragment
 {
+	public RemoveNoteListDialog(String name, OnDialogAcceptedListener listener)
+	{
+		m_name = name;
+		m_acceptedListener = listener;
+	}
+
 	public String getName()
 	{
 		return m_name;
-	}
-
-	public void setName(String name)
-	{
-		m_name = name;
 	}
 
 	public String getPassword()
@@ -46,16 +48,6 @@ public class RemoveNoteListDialog extends DialogFragment
 		if (m_password == null)
 			return "";
 		return m_password.getText().toString();
-	}
-
-	public OnDialogAcceptedListener getOnDialogAcceptedListener()
-	{
-		return m_acceptedListener;
-	}
-
-	public void setOnDialogAcceptedListener(OnDialogAcceptedListener listener)
-	{
-		m_acceptedListener = listener;
 	}
 
 	@Override
@@ -68,15 +60,17 @@ public class RemoveNoteListDialog extends DialogFragment
 		message = message.replace("%s", m_name);
 
 		View rootView = inflater.inflate(R.layout.remove_note_list_dialog, null);
-		TextView removeLabel = (TextView)rootView.findViewById(R.id.removeLabel);
+		TextView removeLabel = rootView.findViewById(R.id.removeLabel);
 		removeLabel.setText(message);
-		m_password = (EditText)rootView.findViewById(R.id.password);
+		m_password = rootView.findViewById(R.id.password);
 
 		builder.setView(rootView);
 		builder.setPositiveButton(R.string.button_remove, null);
 		builder.setNegativeButton(R.string.button_cancel, null);
 
 		final AlertDialog alertDialog = builder.create();
+		alertDialog.getWindow().setSoftInputMode(
+			WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
 		alertDialog.setOnShowListener(new DialogInterface.OnShowListener()
 		{
 			@Override

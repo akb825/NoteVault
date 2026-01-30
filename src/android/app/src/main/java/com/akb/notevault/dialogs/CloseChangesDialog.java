@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Aaron Barany
+ * Copyright 2015-2026 Aaron Barany
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,19 +29,14 @@ import com.akb.notevault.R;
 
 public class CloseChangesDialog extends DialogFragment
 {
+	public CloseChangesDialog(OnDialogAcceptedListener listener)
+	{
+		m_acceptedListener = listener;
+	}
+
 	public boolean getSave()
 	{
 		return m_save;
-	}
-
-	public OnDialogAcceptedListener getOnDialogAcceptedListener()
-	{
-		return m_acceptedListener;
-	}
-
-	public void setOnDialogAcceptedListener(OnDialogAcceptedListener listener)
-	{
-		m_acceptedListener = listener;
 	}
 
 	@Override

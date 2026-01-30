@@ -28,6 +28,9 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentFactory;
+
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -60,7 +63,14 @@ public class NoteListActivity extends AppCompatActivity
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
+		if (savedInstanceState != null)
+		{
+			m_lastDialogName = savedInstanceState.getString(LAST_DIALOG_NAME);
+			m_lastDialogId = savedInstanceState.getLong(LAST_DIALOG_ID);
+		}
+		getSupportFragmentManager().setFragmentFactory(new DialogFactory());
 		super.onCreate(savedInstanceState);
+
 		setContentView(R.layout.activity_note_list);
 
 		Intent intent = getIntent();
@@ -112,6 +122,14 @@ public class NoteListActivity extends AppCompatActivity
 	}
 
 	@Override
+	public void onSaveInstanceState(Bundle bundle)
+	{
+		super.onSaveInstanceState(bundle);
+		bundle.putString(LAST_DIALOG_NAME, m_lastDialogName);
+		bundle.putLong(LAST_DIALOG_ID, m_lastDialogId);
+	}
+
+	@Override
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
 		// Inflate the menu; this adds items to the action bar if it is present.
@@ -148,8 +166,7 @@ public class NoteListActivity extends AppCompatActivity
 
 	public void addNote(View view)
 	{
-		AddNoteDialog addDialog = new AddNoteDialog();
-		addDialog.setOnDialogAcceptedListener(new AddNoteListener());
+		AddNoteDialog addDialog = createAddNoteDialog();
 		addDialog.show(getSupportFragmentManager(), "add note");
 	}
 
@@ -187,6 +204,21 @@ public class NoteListActivity extends AppCompatActivity
 		m_notes.sort(new NoteCompare());
 	}
 
+	private AddNoteDialog createAddNoteDialog()
+	{
+		return new AddNoteDialog(new AddNoteListener());
+	}
+
+	private RenameNoteDialog createRenameNoteDialog(String name, long itemId)
+	{
+		return new RenameNoteDialog(name, new RenameNoteListener(itemId));
+	}
+
+	private RemoveNoteDialog createRemoveNoteDialog(String name, long itemId)
+	{
+		return new RemoveNoteDialog(name, new RemoveNoteListener(itemId));
+	}
+
 	private void saveNotes()
 	{
 		if (NoteFile.saveNotes(m_file, m_notes, m_salt, m_key) != NoteFile.Result.Success)
@@ -212,6 +244,22 @@ public class NoteListActivity extends AppCompatActivity
 
 		m_notes.find(id).setMessage(message);
 		saveNotes();
+	}
+
+	private class DialogFactory extends FragmentFactory
+	{
+		@Override
+		public Fragment instantiate(ClassLoader classLoader, String className)
+		{
+			Class<? extends Fragment> clazz = loadFragmentClass(classLoader, className);
+			if (clazz == AddNoteDialog.class)
+				return createAddNoteDialog();
+			if (clazz == RenameNoteDialog.class)
+				return createRenameNoteDialog(m_lastDialogName, m_lastDialogId);
+			if (clazz == RemoveNoteDialog.class)
+				return createRemoveNoteDialog(m_lastDialogName, m_lastDialogId);
+			return super.instantiate(classLoader, className);
+		}
 	}
 
 	private static class NoteCompare implements Comparator<Note>
@@ -313,9 +361,10 @@ public class NoteListActivity extends AppCompatActivity
 		@Override
 		public boolean onMenuItemClick(MenuItem item)
 		{
-			RenameNoteDialog renameDialog = new RenameNoteDialog();
-			renameDialog.setInitialName(m_noteView.getText().toString());
-			renameDialog.setOnDialogAcceptedListener(new RenameNoteListener(m_noteView));
+			m_lastDialogName = m_noteView.getText().toString();
+			m_lastDialogId = ((ListItem)m_noteView.getTag()).getId();
+			RenameNoteDialog renameDialog =
+				createRenameNoteDialog(m_lastDialogName, m_lastDialogId);
 			renameDialog.show(getSupportFragmentManager(), "rename note");
 			return true;
 		}
@@ -325,9 +374,9 @@ public class NoteListActivity extends AppCompatActivity
 
 	private class RenameNoteListener implements OnDialogAcceptedListener
 	{
-		public RenameNoteListener(TextView noteView)
+		public RenameNoteListener(long itemId)
 		{
-			m_noteView = noteView;
+			m_itemId = itemId;
 		}
 
 		@Override
@@ -336,8 +385,7 @@ public class NoteListActivity extends AppCompatActivity
 			RenameNoteDialog renameDialog = (RenameNoteDialog)dialog;
 			String newName = renameDialog.getNewName();
 
-			ListItem item = (ListItem)m_noteView.getTag();
-			Note note = m_notes.find(item.getId());
+			Note note = m_notes.find(m_itemId);
 			note.setTitle(newName);
 
 			repopulateList();
@@ -345,7 +393,7 @@ public class NoteListActivity extends AppCompatActivity
 			return true;
 		}
 
-		private TextView m_noteView;
+		private long m_itemId;
 	}
 
 	private class RemoveListener implements MenuItem.OnMenuItemClickListener
@@ -358,9 +406,10 @@ public class NoteListActivity extends AppCompatActivity
 		@Override
 		public boolean onMenuItemClick(MenuItem item)
 		{
-			RemoveNoteDialog removeDialog = new RemoveNoteDialog();
-			removeDialog.setName(m_noteView.getText().toString());
-			removeDialog.setOnDialogAcceptedListener(new RemoveNoteListener(m_noteView));
+			m_lastDialogName = m_noteView.getText().toString();
+			m_lastDialogId = ((ListItem)m_noteView.getTag()).getId();
+			RemoveNoteDialog removeDialog =
+				createRemoveNoteDialog(m_lastDialogName, m_lastDialogId);
 			removeDialog.show(getSupportFragmentManager(), "remove note");
 			return true;
 		}
@@ -370,23 +419,22 @@ public class NoteListActivity extends AppCompatActivity
 
 	private class RemoveNoteListener implements OnDialogAcceptedListener
 	{
-		public RemoveNoteListener(TextView noteView)
+		public RemoveNoteListener(long itemId)
 		{
-			m_noteView = noteView;
+			m_itemId = itemId;
 		}
 
 		@Override
 		public boolean onDialogAccepted(DialogFragment dialog)
 		{
-			ListItem item = (ListItem)m_noteView.getTag();
-			m_notes.remove(item.getId());
+			m_notes.remove(m_itemId);
 
 			repopulateList();
 			saveNotes();
 			return true;
 		}
 
-		private TextView m_noteView;
+		private long m_itemId;
 	}
 
 	String m_name;
@@ -396,4 +444,9 @@ public class NoteListActivity extends AppCompatActivity
 	private NoteSet m_notes;
 	private CustomAdapter m_noteListAdapter;
 	private ActivityResultLauncher<Intent> m_noteActivityLauncher;
+	private String m_lastDialogName;
+	private long m_lastDialogId;
+
+	static private final String LAST_DIALOG_NAME = "lastDialogName";
+	static private final String LAST_DIALOG_ID = "lastDialogId";
 }

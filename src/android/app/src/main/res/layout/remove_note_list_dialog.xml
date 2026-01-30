@@ -46,6 +46,7 @@
 			android:inputType="textPassword"
 			android:importantForAutofill="no"
 			/>
+		<requestFocus/>
 	</com.google.android.material.textfield.TextInputLayout>
 
 </LinearLayout>
