@@ -1,27 +1,27 @@
 # Install dependent DLLs
 
 # Qt
-find_file(Qt6Core Qt6Core.dll)
-find_file(Qt6Gui Qt6Gui.dll)
-find_file(Qt6Widgets Qt6Widgets.dll)
-find_file(Qt6Svg Qt6Svg.dll)
+get_target_property(Qt6Core Qt6::Core IMPORTED_LOCATION)
+get_target_property(Qt6Gui Qt6::Gui IMPORTED_LOCATION)
+get_target_property(Qt6Widgets Qt6::Widgets IMPORTED_LOCATION)
+get_target_property(Qt6Svg Qt6::Svg IMPORTED_LOCATION)
 install(FILES ${Qt6Core} ${Qt6Gui} ${Qt6Widgets} ${Qt6Svg} DESTINATION bin)
 
-# Also the platform.
+# Also the platform and image plugins.
 get_filename_component(qt6Base ${Qt6Core} DIRECTORY)
 get_filename_component(qt6Base ${qt6Base} DIRECTORY)
-find_file(qwindows qwindows.dll PATHS ${qt6Base}/plugins/platforms)
-install(FILES ${qwindows} DESTINATION bin/platforms)
+install(FILES ${qt6Base}/plugins/platforms/qwindows.dll DESTINATION bin/platforms)
+install(FILES ${qt6Base}/plugins/imageformats/qsvg.dll DESTINATION bin/imageformats)
 
 # OpenSSL
-string(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\\..*" "\\1_\\2" version ${OPENSSL_VERSION})
+string(REGEX REPLACE "^([0-9]+)\\..*" "\\1" version ${OPENSSL_VERSION})
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	set(platformSuffix "-x64")
 else()
 	set(platformSuffix)
 endif()
-set(cryptoName libcrypto-${version}${platformSuffix}.dll)
-find_file(libcrypto ${cryptoName})
+get_filename_component(opensslBase ${OPENSSL_INCLUDE_DIR} DIRECTORY)
+set(libcrypto ${opensslBase}/bin/libcrypto-${version}${platformSuffix}.dll)
 install(FILES ${libcrypto} DESTINATION bin)
 
 set(CPACK_GENERATOR WIX)

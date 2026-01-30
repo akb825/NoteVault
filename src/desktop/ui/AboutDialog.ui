@@ -126,7 +126,7 @@
           </font>
          </property>
          <property name="text">
-          <string>Copyright © 2015 Aaron Barany</string>
+          <string>Copyright © 2015-2026 Aaron Barany</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>

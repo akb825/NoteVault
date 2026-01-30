@@ -1,6 +1,6 @@
 #pragma once
 /*
- * Copyright 2015 Aaron Barany
+ * Copyright 2015-2026 Aaron Barany
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-#define VERSION_STRING "1.0.0"
+#define VERSION_STRING "1.1.0"

@@ -58,13 +58,13 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Svg)
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
 
 qt_standard_project_setup()
 
 qt_add_executable(${PROJECT_NAME} ${SRC_LIST})
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets OpenSSL::Crypto)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::Svg OpenSSL::Crypto)
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 set(CPACK_PACKAGE_NAME "Note Vault")
@@ -75,7 +75,7 @@ set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY NoteVault)
 set(CPACK_PACKAGE_VERSION_MAJOR 1)
 set(CPACK_PACKAGE_VERSION_MINOR 1)
 set(CPACK_PACKAGE_VERSION_PATCH 0)
-set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/../license.txt)
+set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/install/License.txt)
 set(CPACK_PACKAGE_EXECUTABLES "${PROJECT_NAME};Note Vault")
 
 if (WIN32)
